@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dotnet-app
+  labels:
+    app: dotnet-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dotnet-app
+  template:
+    metadata:
+      labels:
+        app: dotnet-app
+      annotations:
+        ad.datadoghq.com/dotnet-app.logs: '[{"source": "dotnet", "service": "dotnet-app"}]'
+    spec:
+      containers:
+      - name: dotnet-app
+        image: araujoajoao/dotnet-todoapi:latest
+        ports:
+        - containerPort: 5000

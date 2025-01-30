@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-app
+  labels:
+    app: java-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-app
+  template:
+    metadata:
+      labels:
+        app: java-app
+      annotations:
+        ad.datadoghq.com/java-app.checks: |
+          {
+            "openmetrics": {
+              "instances": [
+                {
+                  "prometheus_url": "http://%%host%%:8080/metrics",
+                  "namespace": "java_app",
+                  "metrics": ["*"]
+                }
+              ]
+            }
+          }
+    spec:
+      containers:
+      - name: java-app
+        image: araujoajoao/java-spring:latest
+        ports:
+        - containerPort: 8080

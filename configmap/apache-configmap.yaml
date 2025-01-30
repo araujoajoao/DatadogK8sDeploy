@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apache-config
+  labels:
+    app: apache
+  namespace: default
+data:
+  apache.yaml: |-
+    logs:
+      - type: file
+        path: /var/log/apache2/access.log
+        source: apache
+      - type: file
+        path: /var/log/apache2/error.log
+        source: apache
