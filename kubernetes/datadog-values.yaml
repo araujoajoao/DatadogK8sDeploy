@@ -1,6 +1,6 @@
 datadog:
-  apiKey: "2e72626d09606242895bfe90858fd6e7"
-  appKey: "6abe6b3979892fae8c2234f530ef6477345fee4f"
+  apiKey: "<YOUR_DATADOG_API_KEY>"
+  appKey: "<YOUR_DATADOG_APP_KEY>"
   clusterName: "datadog-cluster"
   hostname: "datadog-agent-host"
   site: "datadoghq.com"
