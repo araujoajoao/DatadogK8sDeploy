@@ -174,7 +174,7 @@ kubectl logs <datadog-agent-pod-name>
 Ensure the Datadog Agent is running and has the correct API key configured.
 Verify that the applications are exposing metrics and logs correctly.
 
-## Conclusion
+## Get to the point
 This project demonstrates how to set up a Kubernetes cluster, deploy applications, and integrate them with Datadog for observability. By following this guide, you can monitor logs, metrics, and traces for your Java, .NET, and Python applications, and set up alarms for critical events.
 
 For further customization, refer to the [Datadog documentation](https://docs.datadoghq.com/).
