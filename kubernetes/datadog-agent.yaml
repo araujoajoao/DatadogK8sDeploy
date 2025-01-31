@@ -5,7 +5,7 @@ metadata:
   namespace: default
 data:
   datadog.yaml: |
-    api_key: "2e72626d09606242895bfe90858fd6e7"
+    api_key: "<YOUR_DATADOG_API_KEY>"
 
     # Enable logs collection
     logs:
@@ -23,7 +23,7 @@ data:
     # Enable the Datadog Cluster Agent
     cluster_agent:
       enabled: true
-      auth_token: "pub00543973842a6393404434af9e5e8022"
+      auth_token: "<YOUR_DATADOG_AGENT_TOKEN>"
 
     # Enable orchestrator explorer (requires Datadog Agent >= v7.41.0)
     orchestrator_explorer:
