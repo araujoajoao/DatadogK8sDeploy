@@ -18,6 +18,6 @@ spec:
     spec:
       containers:
       - name: dotnet-app
-        image: araujoajoao/dotnet-todoapi:latest
+        image: araujoajoao/dotnet-app:latest
         ports:
         - containerPort: 5000

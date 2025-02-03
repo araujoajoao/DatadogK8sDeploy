@@ -1,6 +1,6 @@
 datadog:
-  apiKey: "<YOUR_DATADOG_API_KEY>"
-  appKey: "<YOUR_DATADOG_APP_KEY>"
+  apiKey: "2e72626d09606242895bfe90858fd6e7"
+  appKey: "6abe6b3979892fae8c2234f530ef6477345fee4f"
   clusterName: "datadog-cluster"
   hostname: "datadog-agent-host"
   site: "datadoghq.com"
@@ -34,8 +34,10 @@ datadog:
     enabled: true
     replicas: 1
     token: "pub00543973842a6393404434af9e5e8022"
+    image:
+      tag: "1.18.0"
 
-  useHostNetwork: true
+  useHostNetwork: false
 
   listeners:
     - name: kubelet
@@ -47,10 +49,16 @@ datadog:
     enabled: true
 
   tags:
-    - "env:production"
+    - "env:develop"
     - "k8s_cluster:datadog-cluster"
 
 agents:
+  image:
+    tag: "7.33.0"
+  securityContext:
+    readOnlyRootFilesystem: false
+    runAsUser: 0
+    privileged: true
   tolerations:
     - effect: NoSchedule
       key: node-role.kubernetes.io/control-plane
@@ -59,43 +67,52 @@ agents:
       key: node-role.kubernetes.io/etcd
       operator: Exists
 
-  containers:
-    agent:
-      env:
-        - name: DD_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: datadog-secret
-              key: api-key
-        - name: DD_APP_KEY
-          valueFrom:
-            secretKeyRef:
-              name: datadog-secret
-              key: app-key
-        - name: DD_HOSTNAME
-          value: "datadog-agent-host"
-        - name: DD_SITE
-          value: "datadoghq.com"
-        - name: DD_KUBERNETES_KUBELET_HOST
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: DD_KUBELET_TLS_VERIFY
-          value: "false"
-        - name: DD_COLLECT_KUBERNETES_EVENTS
-          value: "true"
-        - name: DD_ENABLE_ORCHESTRATOR_EXPLORER
-          value: "true"
-        - name: DD_APM_ENABLED
-          value: "true"
-        - name: DD_PROCESS_AGENT_ENABLED
-          value: "true"
-        - name: DD_LOGS_ENABLED
-          value: "true"
-        - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
-          value: "true"
-        - name: DD_ENV
-          value: "production"
+  volumeMounts:
+    - name: auth-token
+      mountPath: /var/run/datadog/auth
+
+volumes:
+  - name: auth-token
+    emptyDir:
+      medium: "Memory"
+
+containers:
+  agent:
+    env:
+      - name: DD_API_KEY
+        valueFrom:
+          secretKeyRef:
+            name: datadog-secret
+            key: api-key
+      - name: DD_APP_KEY
+        valueFrom:
+          secretKeyRef:
+            name: datadog-secret
+            key: app-key
+      - name: DD_HOSTNAME
+        value: "datadog-agent-host"
+      - name: DD_SITE
+        value: "datadoghq.com"
+      - name: DD_KUBERNETES_KUBELET_HOST
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
+      - name: DD_KUBELET_TLS_VERIFY
+        value: "false"
+      - name: DD_COLLECT_KUBERNETES_EVENTS
+        value: "true"
+      - name: DD_ENABLE_ORCHESTRATOR_EXPLORER
+        value: "true"
+      - name: DD_APM_ENABLED
+        value: "true"
+      - name: DD_PROCESS_AGENT_ENABLED
+        value: "true"
+      - name: DD_LOGS_ENABLED
+        value: "true"
+      - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
+        value: "true"
+      - name: DD_ENV
+        value: "production"
 
 clusterAgent:
   enabled: true
