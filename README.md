@@ -41,8 +41,6 @@ helm repo update
 Install the Datadog Operator:
 
 ```bash
-helm repo add datadog https://helm.datadoghq.com
-helm repo update
 kubectl create secret generic datadog-secret --from-literal api-key=<YOUR_DATADOG_API_KEY> --from-literal api-key=<YOUR_DATADOG_APP_KEY> 
 ```
 
