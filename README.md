@@ -21,7 +21,7 @@ Before starting, ensure you have the following installed:
 Create a Kubernetes cluster using kind:
 
 ```bash
-kind create cluster --config helm/datadog/kind-config.yaml
+kind create cluster --config kubernetes/kind-config.yaml
 ```
 
 Install Calico for networking:
@@ -38,20 +38,22 @@ helm repo add datadog https://helm.datadoghq.com
 helm repo update
 ```
 
-Create a Kubernetes secret with your Datadog API and App keys:
+Install the Datadog Operator:
 
 ```bash
-kubectl create secret generic datadog-secret \
-  --from-literal=api-key=<YOUR_DATADOG_API_KEY> \
-  --from-literal=app-key=<YOUR_DATADOG_APP_KEY>
+helm repo add datadog https://helm.datadoghq.com
+helm repo update
+kubectl create secret generic datadog-secret --from-literal api-key=<YOUR_DATADOG_API_KEY> --from-literal api-key=<YOUR_DATADOG_APP_KEY> 
 ```
 
-Replace `<YOUR_DATADOG_API_KEY>` and `<YOUR_DATADOG_APP_KEY>` with your actual Datadog API and App keys.
+Replace `<YOUR_DATADOG_API_KEY>` with your actual Datadog API key.
+Replace `<YOUR_DATADOG_APP_KEY>` with your actual Datadog APP key.
+
 
 Install the Datadog Agent using Helm:
 
 ```bash
-helm install datadog-agent -f datadog-values.yaml datadog/datadog
+helm install datadog-agent -f kubernetes/datadog-agent.yaml datadog/datadog --set agents.image.tag=7.36.0
 ```
 
 ## Step 3: Deploy Middleware (Apache and RabbitMQ)
@@ -77,33 +79,38 @@ git clone https://github.com/appoena/datadogpoweruser.git
 ```
 
 ```bash
-docker build -t dotnet-todoapi:latest .
-docker build -t java-spring:latest .
-docker build -t python-flask:latest .
+cd ../java
+docker build -t java-app:latest .
+
+cd ../dotnet
+docker build -t dotnet-app:latest .
+
+cd ../python
+docker build -t python-app:latest .
 ```
 
 Load the Docker images into the kind cluster:
 
 ```bash
-kind load docker-image dotnet-todoapi:latest --name datadog-cluster
-kind load docker-image java-spring:latest --name datadog-cluster
-kind load docker-image python-flask:latest --name datadog-cluster
+kind load docker-image java-app:latest --name datadog-cluster
+kind load docker-image dotnet-app:latest --name datadog-cluster
+kind load docker-image python-app:latest --name datadog-cluster
 ```
 
 Tag and push the images to Docker Hub (optional):
 
 ```bash
-docker tag dotnet-todoapi araujoajoao/dotnet-todoapi:latest
-docker tag python-flask araujoajoao/python-flask:latest
-docker tag java-spring araujoajoao/java-spring:latest
+docker tag dotnet-app araujoajoao/dotnet-app:latest
+docker tag python-app araujoajoao/python-app:latest
+docker tag java-app araujoajoao/java-app:latest
 ```
 
 Deploy the applications to Kubernetes:
 
 ```bash
-kubectl apply -f dotnet-todoapi.yaml
-kubectl apply -f java-spring.yaml
-kubectl apply -f python-flask.yaml
+kubectl apply -f java-app.yaml
+kubectl apply -f dotnet-app.yaml
+kubectl apply -f python-app.yaml
 ```
 
 ## Step 5: Configure Metrics Collection
