@@ -41,17 +41,16 @@ helm repo update
 Install the Datadog Operator:
 
 ```bash
-kubectl create secret generic datadog-secret --from-literal api-key=<YOUR_DATADOG_API_KEY> --from-literal api-key=<YOUR_DATADOG_APP_KEY> 
+kubectl apply -f kubernetes/datadog-secret.yaml 
 ```
 
-Replace `<YOUR_DATADOG_API_KEY>` with your actual Datadog API key.
-Replace `<YOUR_DATADOG_APP_KEY>` with your actual Datadog APP key.
+
 
 
 Install the Datadog Agent using Helm:
 
 ```bash
-helm install datadog-agent -f kubernetes/datadog-agent.yaml datadog/datadog --set agents.image.tag=7.36.0
+helm install datadog-agent -f kubernetes/datadog-values.yaml datadog/datadog
 ```
 
 ## Step 3: Deploy Middleware (Apache and RabbitMQ)
@@ -132,12 +131,10 @@ kind delete cluster --name datadog-cluster
 Recreate the cluster and reapply all configurations:
 
 ```bash
-kind create cluster --config helm/datadog/kind-config.yaml
+kind create cluster --config kubernetes/kind-config.yaml
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
-kubectl create secret generic datadog-secret \
-  --from-literal=api-key=<YOUR_DATADOG_API_KEY> \
-  --from-literal=app-key=<YOUR_DATADOG_APP_KEY>
-helm install datadog-agent -f datadog-values.yaml datadog/datadog
+kubectl apply -f kubernetes/datadog-secret.yaml
+helm install datadog-agent -f kubernetes/datadog-values.yaml datadog/datadog
 ```
 
 ## Step 7: Verify Deployment
