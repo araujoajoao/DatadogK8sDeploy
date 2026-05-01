@@ -4,6 +4,9 @@ metadata:
   name: python-app
   labels:
     app: python-app
+    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/service: "python-app"
+    tags.datadoghq.com/version: "latest"
 spec:
   replicas: 1
   selector:
@@ -13,6 +16,9 @@ spec:
     metadata:
       labels:
         app: python-app
+        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/service: "python-app"
+        tags.datadoghq.com/version: "latest"
       annotations:
         ad.datadoghq.com/python-app.logs: '[{"source": "python", "service": "python-app"}]'
     spec:
@@ -21,3 +27,18 @@ spec:
         image: araujoajoao/python-app:latest
         ports:
         - containerPort: 8000
+        env:
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_TRACE_AGENT_PORT
+            value: "8126"
+          - name: DD_LOGS_INJECTION
+            value: "true"
+          - name: DD_SERVICE
+            value: "python-app"
+          - name: DD_ENV
+            value: "develop"
+          - name: DD_VERSION
+            value: "latest"
