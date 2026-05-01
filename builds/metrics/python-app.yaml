@@ -21,3 +21,12 @@ spec:
         image: araujoajoao/python-app:latest
         ports:
         - containerPort: 8000
+        env:
+          - name: DD_LOGS_INJECTION
+            value: "true"
+          - name: DD_SERVICE
+            value: "python-app"
+          - name: DD_ENV
+            value: "develop"
+          - name: DD_VERSION
+            value: "latest"

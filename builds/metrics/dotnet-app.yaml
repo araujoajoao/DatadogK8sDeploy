@@ -21,3 +21,12 @@ spec:
         image: araujoajoao/dotnet-app:latest
         ports:
         - containerPort: 5000
+        env:
+          - name: DD_LOGS_INJECTION
+            value: "true"
+          - name: DD_SERVICE
+            value: "dotnet-app"
+          - name: DD_ENV
+            value: "develop"
+          - name: DD_VERSION
+            value: "latest"
