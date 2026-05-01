@@ -4,6 +4,9 @@ metadata:
   name: dotnet-app
   labels:
     app: dotnet-app
+    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/service: "dotnet-app"
+    tags.datadoghq.com/version: "latest"
 spec:
   replicas: 1
   selector:
@@ -13,6 +16,9 @@ spec:
     metadata:
       labels:
         app: dotnet-app
+        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/service: "dotnet-app"
+        tags.datadoghq.com/version: "latest"
       annotations:
         ad.datadoghq.com/dotnet-app.logs: '[{"source": "dotnet", "service": "dotnet-app"}]'
     spec:
@@ -22,6 +28,12 @@ spec:
         ports:
         - containerPort: 5000
         env:
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_TRACE_AGENT_PORT
+            value: "8126"
           - name: DD_LOGS_INJECTION
             value: "true"
           - name: DD_SERVICE

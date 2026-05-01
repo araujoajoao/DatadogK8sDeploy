@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kubernetes observability project that deploys Java, .NET, and Python applications on a local KinD cluster with full Datadog integration (APM, logs, metrics, process monitoring).
+Kubernetes observability project that deploys Java, .NET, and Python applications on a local KinD cluster with full Datadog integration (APM traces, logs, metrics) using the **Datadog Operator**.
 
 ## Cluster Lifecycle
 
@@ -13,14 +13,19 @@ Kubernetes observability project that deploys Java, .NET, and Python application
 kind create cluster --config kubernetes/kind-config.yaml
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
-# Store Datadog credentials as a secret (never commit real keys)
+# Create Datadog credentials secret (never commit real keys)
 kubectl create secret generic datadog-secret \
   --from-literal=api-key=<YOUR_DATADOG_API_KEY> \
   --from-literal=app-key=<YOUR_DATADOG_APP_KEY>
 
-# Install Datadog agent via Helm
+# Install Datadog Operator
 helm repo add datadog https://helm.datadoghq.com && helm repo update
-helm install datadog-agent -f kubernetes/datadog-values.yaml datadog/datadog --set agents.image.tag=7.36.0
+helm install datadog-operator datadog/datadog-operator
+kubectl wait pod --selector=app.kubernetes.io/name=datadog-operator \
+  --for=condition=Ready --timeout=60s
+
+# Deploy Datadog Agent via the Operator CR
+kubectl apply -f kubernetes/datadog-agent.yaml
 
 # Destroy cluster
 kind delete cluster --name datadog-cluster
@@ -29,23 +34,13 @@ kind delete cluster --name datadog-cluster
 ## Deploying Applications
 
 ```bash
-# Build images (source apps cloned separately from appoena/datadogpoweruser)
-docker build -t java-app:latest builds/apps/java/
-docker build -t dotnet-app:latest builds/apps/dotnet/
-docker build -t python-app:latest builds/apps/python/
-
-# Load into KinD (no registry needed for local dev)
-kind load docker-image java-app:latest
-kind load docker-image dotnet-app:latest
-kind load docker-image python-app:latest
-
 # Deploy middleware
 kubectl apply -f app/apache-deployment.yaml
-kubectl apply -f configmap/apache-configmap.yaml
 kubectl apply -f app/rabbitmq-deployment.yaml
+kubectl apply -f configmap/apache-configmap.yaml
 kubectl apply -f configmap/rabbitmq-configmap.yaml
 
-# Deploy instrumented apps
+# Deploy instrumented apps (images pulled from Docker Hub: araujoajoao/*)
 kubectl apply -f builds/metrics/java-app.yaml
 kubectl apply -f builds/metrics/dotnet-app.yaml
 kubectl apply -f builds/metrics/python-app.yaml
@@ -54,37 +49,46 @@ kubectl apply -f builds/metrics/python-app.yaml
 ## Verification
 
 ```bash
+kubectl get datadogagent datadog
 kubectl get pods
-kubectl get pods | grep datadog
-kubectl logs <datadog-agent-pod-name>
+kubectl logs -l app.kubernetes.io/component=agent -c agent --tail=50
+kubectl describe datadogagent datadog
 ```
 
 ## Architecture
 
 ```
 kubernetes/
-  kind-config.yaml        — KinD cluster: 1 control-plane + 2 workers
-  datadog-values.yaml     — Datadog Helm values (basic)
-  datadog-values2.yaml    — Datadog Helm values with APM auto-instrumentation enabled
+  kind-config.yaml       — KinD cluster: 1 control-plane + 2 workers
+  datadog-agent.yaml     — DatadogAgent CR (v2alpha1) — single source of truth for agent config
+  datadog-secret.yaml    — Kubernetes Secret with API/App keys (gitignored, do not commit)
 
-app/                      — Middleware deployments (Apache, RabbitMQ)
-configmap/                — Datadog log collection ConfigMaps for middleware
+app/                     — Middleware deployments (Apache, RabbitMQ)
+configmap/               — Datadog file-based log config (supplementary; container logs use annotations)
 
-builds/
-  apps/{java,dotnet,python}/Dockerfile  — App images with DD tracer pre-installed
-  metrics/{java,dotnet,python}-app.yaml — Kubernetes Deployments for instrumented apps
+builds/metrics/          — Kubernetes Deployments for instrumented apps (Java, .NET, Python)
 ```
 
-### Datadog Instrumentation Pattern
+## Datadog Instrumentation Pattern
 
-`builds/metrics/*.yaml` deployments use two mechanisms for APM:
-1. **Admission webhook** (datadog-values2.yaml): Auto-injects tracer libs via `admission.datadoghq.com/enabled: "true"` + `admission.datadoghq.com/<lang>-lib.version` annotations.
-2. **Manual Dockerfile injection** (builds/apps/*/Dockerfile): Tracers are baked into the image and activated via `DD_TRACE_ENABLED=true` + language-specific runner flags.
+### Agent (DatadogAgent CR)
+`kubernetes/datadog-agent.yaml` uses the `datadoghq.com/v2alpha1` API. Key features enabled:
+- **Logs**: `logCollection.containerCollectAll: true` — collects all container stdout/stderr
+- **APM**: `apm.hostPortConfig.enabled: true` on port 8126 — receives traces from app pods
+- **Metrics**: `kubeStateMetricsCore`, `processDiscovery`, `orchestratorExplorer`
+- **Admission controller**: enabled for future auto-injection of `DD_AGENT_HOST`
 
-Pod labels `tags.datadoghq.com/{env,service,version}` map to Datadog unified service tagging. The `DD_API_KEY` is always read from the `datadog-secret` Kubernetes secret — never hardcoded in app manifests.
+### Apps (builds/metrics/*.yaml)
+Each deployment has three instrumentation layers:
+1. **Unified service tagging** — `tags.datadoghq.com/{env,service,version}` on both `metadata.labels` and `spec.template.metadata.labels`
+2. **APM** — `DD_AGENT_HOST` via downward API (`status.hostIP`) + `DD_TRACE_AGENT_PORT: "8126"` directs traces to the DaemonSet agent on the same node
+3. **Log correlation** — `DD_LOGS_INJECTION: "true"` injects trace IDs into app logs; `ad.datadoghq.com/<name>.logs` annotation sets the source/service for the Datadog agent's log collector
 
-### Known Issues
+### Middleware (app/*.yaml)
+Apache and RabbitMQ use auto-discovery annotations for both logs and metrics checks:
+- `ad.datadoghq.com/apache.logs` / `ad.datadoghq.com/rabbitmq.logs` — log source tagging
+- `ad.datadoghq.com/apache.checks` — Apache HTTP server status metric collection
+- `ad.datadoghq.com/rabbitmq.checks` — RabbitMQ management API metric collection (guest/guest)
 
-- `builds/apps/python/Dockerfile` exposes port 8000 but `builds/metrics/python-app.yaml` targets port 5000 — align them when rebuilding.
-- `builds/apps/dotnet/Dockerfile` has a typo: `DD_VERSION=1..0.0` (double dot).
-- `kubernetes/datadog-values.yaml` and `datadog-values2.yaml` contain hardcoded API/app keys — use the Kubernetes secret pattern instead and keep those files out of commits with real credentials.
+### Security Note
+`kubernetes/datadog-secret.yaml` is gitignored. Always create the secret with `kubectl create secret` and never commit real credentials.

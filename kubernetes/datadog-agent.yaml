@@ -1,0 +1,63 @@
+apiVersion: datadoghq.com/v2alpha1
+kind: DatadogAgent
+metadata:
+  name: datadog
+  namespace: default
+spec:
+  global:
+    clusterName: "datadog-cluster"
+    site: "datadoghq.com"
+    credentials:
+      apiSecret:
+        secretName: datadog-secret
+        keyName: api-key
+      appSecret:
+        secretName: datadog-secret
+        keyName: app-key
+    kubelet:
+      tlsVerify: false
+    tags:
+      - "env:develop"
+      - "k8s_cluster:datadog-cluster"
+
+  features:
+    logCollection:
+      enabled: true
+      containerCollectAll: true
+    apm:
+      enabled: true
+      hostPortConfig:
+        enabled: true
+        hostPort: 8126
+    processDiscovery:
+      enabled: true
+    orchestratorExplorer:
+      enabled: true
+    kubeStateMetricsCore:
+      enabled: true
+    eventCollection:
+      enabled: true
+    clusterChecks:
+      enabled: true
+    admissionController:
+      enabled: true
+      mutateUnlabelled: false
+
+  override:
+    nodeAgent:
+      image:
+        tag: "7.33.0"
+      tolerations:
+        - effect: NoSchedule
+          key: node-role.kubernetes.io/control-plane
+          operator: Exists
+        - effect: NoExecute
+          key: node-role.kubernetes.io/etcd
+          operator: Exists
+      env:
+        - name: DD_ENV
+          value: "develop"
+    clusterAgent:
+      replicas: 1
+      image:
+        tag: "7.33.0"

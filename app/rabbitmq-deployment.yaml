@@ -2,6 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq
+  labels:
+    app: rabbitmq
+    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/service: "rabbitmq"
 spec:
   replicas: 1
   selector:
@@ -11,6 +15,22 @@ spec:
     metadata:
       labels:
         app: rabbitmq
+        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/service: "rabbitmq"
+      annotations:
+        ad.datadoghq.com/rabbitmq.logs: '[{"source": "rabbitmq", "service": "rabbitmq"}]'
+        ad.datadoghq.com/rabbitmq.checks: |
+          {
+            "rabbitmq": {
+              "instances": [
+                {
+                  "rabbitmq_api_url": "http://%%host%%:15672/api/",
+                  "username": "guest",
+                  "password": "guest"
+                }
+              ]
+            }
+          }
     spec:
       containers:
       - name: rabbitmq

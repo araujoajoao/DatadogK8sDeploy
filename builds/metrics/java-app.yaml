@@ -4,6 +4,9 @@ metadata:
   name: java-app
   labels:
     app: java-app
+    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/service: "java-app"
+    tags.datadoghq.com/version: "latest"
 spec:
   replicas: 1
   selector:
@@ -13,6 +16,9 @@ spec:
     metadata:
       labels:
         app: java-app
+        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/service: "java-app"
+        tags.datadoghq.com/version: "latest"
       annotations:
         ad.datadoghq.com/java-app.checks: |
           {
@@ -26,6 +32,7 @@ spec:
               ]
             }
           }
+        ad.datadoghq.com/java-app.logs: '[{"source": "java", "service": "java-app"}]'
     spec:
       containers:
       - name: java-app
@@ -33,6 +40,12 @@ spec:
         ports:
         - containerPort: 8080
         env:
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_TRACE_AGENT_PORT
+            value: "8126"
           - name: DD_LOGS_INJECTION
             value: "true"
           - name: DD_SERVICE
