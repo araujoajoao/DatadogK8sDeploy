@@ -2,6 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: apache
+  labels:
+    app: apache
+    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/service: "apache"
 spec:
   replicas: 1
   selector:
@@ -11,6 +15,20 @@ spec:
     metadata:
       labels:
         app: apache
+        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/service: "apache"
+      annotations:
+        ad.datadoghq.com/apache.logs: '[{"source": "apache", "service": "apache"}]'
+        ad.datadoghq.com/apache.checks: |
+          {
+            "apache": {
+              "instances": [
+                {
+                  "apache_status_url": "http://%%host%%/server-status?auto"
+                }
+              ]
+            }
+          }
     spec:
       containers:
       - name: apache
