@@ -7,6 +7,15 @@ metadata:
   namespace: default
 data:
   rabbitmq.yaml: |-
+    init_config:
+
+    instances:
+      - rabbitmq_api_url: http://%%host%%:15672/api/
+        username: guest
+        password: guest
+        vhosts:
+          - /
+
     logs:
       - type: file
         path: /var/log/rabbitmq/rabbit@*.log

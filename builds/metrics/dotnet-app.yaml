@@ -4,7 +4,7 @@ metadata:
   name: dotnet-app
   labels:
     app: dotnet-app
-    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/env: "mentoria"
     tags.datadoghq.com/service: "dotnet-app"
     tags.datadoghq.com/version: "latest"
 spec:
@@ -16,7 +16,7 @@ spec:
     metadata:
       labels:
         app: dotnet-app
-        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/env: "mentoria"
         tags.datadoghq.com/service: "dotnet-app"
         tags.datadoghq.com/version: "latest"
       annotations:
@@ -26,7 +26,7 @@ spec:
       - name: dotnet-app
         image: araujoajoao/dotnet-app:latest
         ports:
-        - containerPort: 5000
+        - containerPort: 80
         env:
           - name: DD_AGENT_HOST
             valueFrom:
@@ -39,6 +39,10 @@ spec:
           - name: DD_SERVICE
             value: "dotnet-app"
           - name: DD_ENV
-            value: "develop"
+            value: "mentoria"
           - name: DD_VERSION
             value: "latest"
+          - name: DD_RUNTIME_METRICS_ENABLED
+            value: "true"
+          - name: DD_TRACE_METRICS_ENABLED
+            value: "true"

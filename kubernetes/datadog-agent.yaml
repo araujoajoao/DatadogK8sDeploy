@@ -5,7 +5,7 @@ metadata:
   namespace: default
 spec:
   global:
-    clusterName: "datadog-cluster"
+    clusterName: "appoena-lab"
     site: "datadoghq.com"
     credentials:
       apiSecret:
@@ -17,9 +17,8 @@ spec:
     kubelet:
       tlsVerify: false
     tags:
-      - "env:develop"
-      - "k8s_cluster:datadog-cluster"
-
+      - "env:mentoria"
+      - "k8s_cluster:appoena-lab"
   features:
     logCollection:
       enabled: true
@@ -29,6 +28,8 @@ spec:
       hostPortConfig:
         enabled: true
         hostPort: 8126
+      instrumentation:
+        enabled: true
     processDiscovery:
       enabled: true
     orchestratorExplorer:
@@ -36,17 +37,20 @@ spec:
     kubeStateMetricsCore:
       enabled: true
     eventCollection:
-      enabled: true
+      collectKubernetesEvents: true
     clusterChecks:
       enabled: true
     admissionController:
       enabled: true
       mutateUnlabelled: false
-
+    npm:
+      enabled: true
+    usm:
+      enabled: true
   override:
     nodeAgent:
       image:
-        tag: "7.33.0"
+        tag: "7.78.1"
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
@@ -55,9 +59,35 @@ spec:
           key: node-role.kubernetes.io/etcd
           operator: Exists
       env:
+        - name: DD_HOSTNAME
+          value: "lab-mentoria"
+        - name: DD_KUBERNETES_KUBELET_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: DD_KUBELET_TLS_VERIFY
+          value: "false"
+        - name: DD_COLLECT_KUBERNETES_EVENTS
+          value: "true"
+        - name: DD_ENABLE_ORCHESTRATOR_EXPLORER
+          value: "true"
+        - name: DD_APM_ENABLED
+          value: "true"
+        - name: DD_PROCESS_AGENT_ENABLED
+          value: "true"
+        - name: DD_LOGS_ENABLED
+          value: "true"
+        - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
+          value: "true"
+        - name: DD_CONTAINER_EXCLUDE_LOGS
+          value: "kube_namespace:kube-system kube_namespace:local-path-storage name:kindnetd"
         - name: DD_ENV
-          value: "develop"
+          value: "mentoria"
+        - name: DD_DATABASE_MONITORING_ENABLED
+          value: "true"
+        - name: DD_IGNORE_AUTOCONF
+          value: "kube_controller_manager"
     clusterAgent:
       replicas: 1
       image:
-        tag: "7.33.0"
+        tag: "7.78.1"
