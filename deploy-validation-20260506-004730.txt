@@ -1,0 +1,233 @@
+===== 1. ALL PODS =====
+NAME                                     READY   STATUS    RESTARTS       AGE     IP            NODE                        NOMINATED NODE   READINESS GATES
+apache-7747f884b9-xvxzq                  1/1     Running   0              128m    10.244.1.7    appoena-lab-worker3         <none>           <none>
+datadog-agent-gdnw9                      4/4     Running   0              9m10s   10.244.3.10   appoena-lab-worker2         <none>           <none>
+datadog-agent-pjvwk                      4/4     Running   2 (51s ago)    8m8s    10.244.0.7    appoena-lab-control-plane   <none>           <none>
+datadog-agent-s6lq7                      4/4     Running   0              22m     10.244.1.9    appoena-lab-worker3         <none>           <none>
+datadog-agent-x5pxf                      4/4     Running   0              13m     10.244.2.11   appoena-lab-worker          <none>           <none>
+datadog-cluster-agent-6fc9757cc4-qjmsx   1/1     Running   2 (176m ago)   178m    10.244.1.4    appoena-lab-worker3         <none>           <none>
+datadog-operator-595d98cf4b-fh28w        1/1     Running   5 (57m ago)    3h      10.244.2.3    appoena-lab-worker          <none>           <none>
+dotnet-app-6ffdbd6df8-pjb4r              1/1     Running   0              65m     10.244.1.8    appoena-lab-worker3         <none>           <none>
+java-app-66fbf6c69b-mn62g                1/1     Running   0              6m49s   10.244.2.12   appoena-lab-worker          <none>           <none>
+python-app-696c677fd4-8g7sn              1/1     Running   0              65m     10.244.2.10   appoena-lab-worker          <none>           <none>
+rabbitmq-86d7767f46-6hx7r                1/1     Running   0              156m    10.244.3.5    appoena-lab-worker2         <none>           <none>
+
+===== 2. ALL SERVICES =====
+NAME                           TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)              AGE
+apache                         ClusterIP   10.96.160.59    <none>        80/TCP               166m
+datadog-admission-controller   ClusterIP   10.96.113.237   <none>        443/TCP              178m
+datadog-agent                  ClusterIP   10.96.7.208     <none>        8126/TCP,8125/UDP    178m
+datadog-cluster-agent          ClusterIP   10.96.50.167    <none>        5005/TCP             178m
+kubernetes                     ClusterIP   10.96.0.1       <none>        443/TCP              3h21m
+rabbitmq                       ClusterIP   10.96.94.51     <none>        5672/TCP,15672/TCP   166m
+
+===== 3. ALL DEPLOYMENTS =====
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+apache                  1/1     1            1           166m
+datadog-cluster-agent   1/1     1            1           178m
+datadog-operator        1/1     1            1           3h19m
+dotnet-app              1/1     1            1           152m
+java-app                1/1     1            1           152m
+python-app              1/1     1            1           152m
+rabbitmq                1/1     1            1           166m
+
+===== 4. APACHE CHECK =====
+Apache on node: appoena-lab-worker3 — Agent: datadog-agent-s6lq7
+=== [34mService Checks[0m ===
+      Instance ID: apache:fcb6c05ae599eeb [[32mOK[0m]
+      Metric Samples: Last Run: 25, Total: 25
+      Service Checks: Last Run: 1, Total: 1
+
+===== 5. RABBITMQ CHECK =====
+RabbitMQ on node: appoena-lab-worker2 — Agent: datadog-agent-gdnw9
+Error: no valid check found
+
+===== 6. JAVA APP =====
+NAME                        READY   STATUS    RESTARTS   AGE
+java-app-66fbf6c69b-mn62g   1/1     Running   0          7m10s
+03:46:12.792 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+03:46:12.850 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 38383 ms
+03:46:34.256 [main] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+03:46:34.557 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8080 (http) with context path ''
+03:46:34.632 [main] INFO  i.a.springjava.SpringJavaApplication - Started SpringJavaApplication in 67.034 seconds (JVM running for 87.111)
+java -jar ./spring-java.jar 
+===== 7. PYTHON APP =====
+NAME                          READY   STATUS    RESTARTS   AGE
+python-app-696c677fd4-8g7sn   1/1     Running   0          65m
+2026-05-06 03:43:18,835 WARNING [ddtrace.vendor.dogstatsd] [base.py:1031] [dd.service=python-app dd.env=mentoria dd.version=latest dd.trace_id=0 dd.span_id=0] - Error submitting packet: [Errno 111] Connection refused, dropping the packet and closing the socket [8 skipped]
+2026-05-06 03:44:19,088 WARNING [ddtrace.vendor.dogstatsd] [base.py:1031] [dd.service=python-app dd.env=mentoria dd.version=latest dd.trace_id=0 dd.span_id=0] - Error submitting packet: [Errno 111] Connection refused, dropping the packet and closing the socket [8 skipped]
+2026-05-06 03:45:19,658 WARNING [ddtrace.vendor.dogstatsd] [base.py:1031] [dd.service=python-app dd.env=mentoria dd.version=latest dd.trace_id=0 dd.span_id=0] - Error submitting packet: [Errno 111] Connection refused, dropping the packet and closing the socket [8 skipped]
+2026-05-06 03:46:21,680 WARNING [ddtrace.vendor.dogstatsd] [base.py:1031] [dd.service=python-app dd.env=mentoria dd.version=latest dd.trace_id=0 dd.span_id=0] - Error submitting packet: [Errno 111] Connection refused, dropping the packet and closing the socket [8 skipped]
+2026-05-06 03:47:21,962 WARNING [ddtrace.vendor.dogstatsd] [base.py:1031] [dd.service=python-app dd.env=mentoria dd.version=latest dd.trace_id=0 dd.span_id=0] - Error submitting packet: [Errno 111] Connection refused, dropping the packet and closing the socket [8 skipped]
+
+===== 8. DOTNET APP =====
+NAME                          READY   STATUS    RESTARTS   AGE
+dotnet-app-6ffdbd6df8-pjb4r   1/1     Running   0          65m
+{"@t":"2026-05-06T03:09:40.6913719Z","@mt":"{HostingRequestFinishedLog:l}","@r":["Request finished HTTP/1.1 GET http://localhost:8082/weatherforecast - - - 200 - application/json;+charset=utf-8 1039.4016ms"],"ElapsedMilliseconds":1039.4016,"StatusCode":200,"ContentType":"application/json; charset=utf-8","ContentLength":null,"Protocol":"HTTP/1.1","Method":"GET","Scheme":"http","Host":"localhost:8082","PathBase":"","Path":"/weatherforecast","QueryString":"","HostingRequestFinishedLog":"Request finished HTTP/1.1 GET http://localhost:8082/weatherforecast - - - 200 - application/json;+charset=utf-8 1039.4016ms","EventId":{"Id":2,"Name":"RequestFinished"},"SourceContext":"Microsoft.AspNetCore.Hosting.Diagnostics","RequestId":"0HNLB3JKEJ29V:00000002","RequestPath":"/weatherforecast","ConnectionId":"0HNLB3JKEJ29V"}
+{"@t":"2026-05-06T03:09:40.7246492Z","@mt":"{HostingRequestStartingLog:l}","@r":["Request starting HTTP/1.1 GET http://localhost:8082/api/todo - -"],"Protocol":"HTTP/1.1","Method":"GET","ContentType":null,"ContentLength":null,"Scheme":"http","Host":"localhost:8082","PathBase":"","Path":"/api/todo","QueryString":"","HostingRequestStartingLog":"Request starting HTTP/1.1 GET http://localhost:8082/api/todo - -","EventId":{"Id":1,"Name":"RequestStarting"},"SourceContext":"Microsoft.AspNetCore.Hosting.Diagnostics","RequestId":"0HNLB3JKEJ2A0:00000002","RequestPath":"/api/todo","ConnectionId":"0HNLB3JKEJ2A0"}
+{"@t":"2026-05-06T03:09:40.7275048Z","@mt":"{HostingRequestFinishedLog:l}","@r":["Request finished HTTP/1.1 GET http://localhost:8082/api/todo - - - 404 0 - 2.8691ms"],"ElapsedMilliseconds":2.8691,"StatusCode":404,"ContentType":null,"ContentLength":0,"Protocol":"HTTP/1.1","Method":"GET","Scheme":"http","Host":"localhost:8082","PathBase":"","Path":"/api/todo","QueryString":"","HostingRequestFinishedLog":"Request finished HTTP/1.1 GET http://localhost:8082/api/todo - - - 404 0 - 2.8691ms","EventId":{"Id":2,"Name":"RequestFinished"},"SourceContext":"Microsoft.AspNetCore.Hosting.Diagnostics","RequestId":"0HNLB3JKEJ2A0:00000002","RequestPath":"/api/todo","ConnectionId":"0HNLB3JKEJ2A0"}
+{"@t":"2026-05-06T03:11:31.5646889Z","@mt":"As of \"{now}\", the heartbeat has been running for \"{heartbeatDuration}\" which is longer than \"{interval}\". This could be caused by thread pool starvation.","@l":"Warning","now":"2026-05-06T03:11:27.7924613+00:00","heartbeatDuration":"00:00:02.9266774","interval":"00:00:01","EventId":{"Id":22,"Name":"HeartbeatSlow"},"SourceContext":"Microsoft.AspNetCore.Server.Kestrel"}
+{"@t":"2026-05-06T03:31:20.3536641Z","@mt":"As of \"{now}\", the heartbeat has been running for \"{heartbeatDuration}\" which is longer than \"{interval}\". This could be caused by thread pool starvation.","@l":"Warning","now":"2026-05-06T03:31:15.0881844+00:00","heartbeatDuration":"00:00:01.2930041","interval":"00:00:01","EventId":{"Id":22,"Name":"HeartbeatSlow"},"SourceContext":"Microsoft.AspNetCore.Server.Kestrel"}
+
+===== 9. AGENT STATUS SUMMARY =====
+  feature_apm_enabled: true
+  feature_auto_instrumentation_enabled: false
+  feature_container_images_enabled: true
+--
+  Running Checks
+  ==============
+
+--
+APM Agent
+=========
+
+  Status: Running
+  Pid: 1
+  Uptime: 577 seconds
+--
+Logs Agent
+==========
+
+--
+    LogsProcessed: 1786
+    LogsSent: 1791
+    LogsTruncated: 0
+    RetryCount: 0
+--
+  Status: Running
+  Uptime: 8m45.004959791s
+  Last Updated: 2026-05-06 03:48:14 UTC (1778039294000)
+
+===== 10. APM STATUS =====
+APM Agent
+=========
+
+  Status: Running
+  Pid: 1
+  Uptime: 579 seconds
+
+===== 11. LOGS AGENT STATUS =====
+Logs Agent
+==========
+
+    Reliable: Sending compressed logs in HTTPS to agent-http-intake.logs.datadoghq.com. on port 443 (API Key: ****************************5a3d)
+    BytesSent: 2342577
+    EncodedBytesSent: 117308
+    LogsProcessed: 1792
+    LogsSent: 1795
+    LogsTruncated: 0
+    RetryCount: 0
+    RetryTimeSpent: 0s
+
+===== 12. CONNECTIVITY =====
+2026-05-06 03:48:22 UTC | CORE | INFO | (comp/core/ipc/impl/ipc.go:194 in printAuthSignature) | successfully loaded the IPC auth primitives (fingerprint: e3bc441352f546a3)
+  diagnostics: map[connectivity:[{success Agent package yum  map[endpoint:https://yum.datadoghq.com]} {success Agent installation  map[endpoint:https://install.datadoghq.com]} {success Agent package apt  map[endpoint:https://apt.datadoghq.com]} {success Agent keys  map[endpoint:https://keys.datadoghq.com]} {success APM traces  map[endpoint:https://trace.agent.datadoghq.com./_health]} {success LLM obs  map[endpoint:https://llmobs-intake.datadoghq.com./api/v2/llmobs]} {success Remote configuration  map[endpoint:https://config.datadoghq.com./_health]} {success Connectivity to https://dbm-metrics-intake.datadoghq.com./api/v2/databasequery  map[]} {success Connectivity to https://dbm-metrics-intake.datadoghq.com./api/v2/dbmmetrics  map[]} {success Connectivity to https://dbm-metrics-intake.datadoghq.com./api/v2/dbmmetadata  map[]} {success Connectivity to https://dbm-metrics-intake.datadoghq.com./api/v2/dbmactivity  map[]} {success Connectivity to https://dbm-metrics-intake.datadoghq.com./api/v2/dbmhealth  map[]} {success Connectivity to https://ndm-intake.datadoghq.com./api/v2/ndm  map[]} {success Connectivity to https://snmp-traps-intake.datadoghq.com./api/v2/ndmtraps  map[]} {success Connectivity to https://ndmflow-intake.datadoghq.com./api/v2/ndmflow  map[]} {success Connectivity to https://netpath-intake.datadoghq.com./api/v2/netpath  map[]} {success Connectivity to https://ndm-intake.datadoghq.com./api/v2/ndmconfig  map[]} {success Connectivity to https://contlcycle-intake.datadoghq.com./api/v2/contlcycle  map[]} {success Connectivity to https://contimage-intake.datadoghq.com./api/v2/contimage  map[]} {success Connectivity to https://sbom-intake.datadoghq.com./api/v2/sbom  map[]} {success Connectivity to https://http-synthetics.datadoghq.com./api/v2/synthetics  map[]} {success Connectivity to https://trace.agent.datadoghq.com./api/v2/data_streams_messages  map[]} {success HTTPS connectivity to https://agent-http-intake.logs.datadoghq.com./api/v2/logs  map[]} {success Connectivity to https://app.datadoghq.com./api/v1/series  map[]} {success Connectivity to https://app.datadoghq.com./api/v1/check_run  map[]} {success Connectivity to https://app.datadoghq.com./intake/  map[]} {success Connectivity to https://app.datadoghq.com./api/v1/validate  map[]} {success Connectivity to https://app.datadoghq.com./api/v1/metadata  map[]} {success Connectivity to https://app.datadoghq.com./api/v2/series  map[]} {success Connectivity to https://app.datadoghq.com./api/beta/sketches  map[]} {success Connectivity to https://7-78-1-flare.agent.datadoghq.com./support/flare  map[]}]]
+    Error: could not start ebpf tracer: could not start ebpf manager: failed to cleanup tracefs: write "-:r___nf_conntrack_confirm_conntracker_8274\n" to kprobe_events: write /sys/kernel/debug/tracing/kprobe_events: device or resource busy
+    Error: failed to init probe: failed to cleanup tracefs: write "-:r___nf_conntrack_confirm_conntracker_8274\n" to kprobe_events: write /sys/kernel/debug/tracing/kprobe_events: device or resource busy
+
+===== 13. DATADOG AGENT CR STATUS =====
+{
+    "agent": {
+        "available": 4,
+        "current": 4,
+        "desired": 4,
+        "ready": 4,
+        "state": "Running",
+        "status": "Running (4/4/4)",
+        "upToDate": 4
+    },
+    "agentList": [
+        {
+            "available": 4,
+            "current": 4,
+            "currentHash": "6737a207042035a566db7381fff415f5",
+            "daemonsetName": "datadog-agent",
+            "desired": 4,
+            "lastUpdate": "2026-05-06T03:48:13Z",
+            "ready": 4,
+            "state": "Running",
+            "status": "Running (4/4/4)",
+            "upToDate": 4
+        }
+    ],
+    "clusterAgent": {
+        "availableReplicas": 1,
+        "currentHash": "ac5c26f16c123b051ae54f9455fdcdb6",
+        "deploymentName": "datadog-cluster-agent",
+        "generatedToken": "ZeboMDwzLfyUgijhRtMmZuDLmuHxGMHs",
+        "lastUpdate": "2026-05-06T03:48:13Z",
+        "readyReplicas": 1,
+        "replicas": 1,
+        "state": "Running",
+        "status": "Running (1/1/1)",
+        "updatedReplicas": 1
+    },
+    "conditions": [
+        {
+            "lastTransitionTime": "2026-05-06T00:49:02Z",
+            "message": "reconcile succeed",
+            "reason": "reconcile_succeed",
+            "status": "True",
+            "type": "ClusterAgentReconcile"
+        },
+        {
+            "lastTransitionTime": "2026-05-06T00:49:02Z",
+            "message": "reconcile succeed",
+            "reason": "reconcile_succeed",
+            "status": "True",
+            "type": "AgentReconcile"
+        },
+        {
+            "lastTransitionTime": "2026-05-06T00:49:03Z",
+            "message": "Datadog metrics forwarding ok",
+            "reason": "MetricsForwardingSucceeded",
+            "status": "True",
+            "type": "ActiveDatadogMetrics"
+        },
+        {
+            "lastTransitionTime": "2026-05-06T03:48:13Z",
+            "message": "reconcile succeed",
+            "reason": "reconcile_succeed",
+            "status": "True",
+            "type": "ClusterChecksRunnerReconcile"
+        }
+    ]
+}
+
+===== 14. CLUSTER AGENT STATUS =====
+2026-05-06 03:48:36 UTC | CLUSTER | WARN | (pkg/util/log/log.go:762 in func1) | Unknown environment variable: DD_KUBE_STATE_METRICS_CORE_ENABLED
+2026-05-06 03:48:36 UTC | CLUSTER | WARN | (pkg/util/log/log.go:762 in func1) | Unknown environment variable: DD_KUBE_STATE_METRICS_CORE_CONFIGMAP_NAME
+2026-05-06 03:48:36 UTC | CLUSTER | INFO | (pkg/util/log/log.go:717 in func1) | Loading proxy settings
+2026-05-06 03:48:36 UTC | CLUSTER | INFO | (pkg/util/log/log.go:717 in func1) | Starting to resolve secrets
+--
+  Running Checks
+  ==============
+    
+--
+      Service Checks: Last Run: 3, Total: 1,797
+      Average Execution Time : 5.086s
+      Last Execution Date : 2026-05-06 03:48:36.183 UTC (1778039316183)
+--
+      Service Checks: Last Run: 12, Total: 8,412
+      Average Execution Time : 297ms
+      Last Execution Date : 2026-05-06 03:48:23.504 UTC (1778039303504)
+--
+      Instance ID: orchestrator:56c6d25ae60b1be2 [WARNING]
+      Configuration Source: file:/etc/datadog-agent/conf.d/orchestrator.d/orchestrator.yaml[0]
+      Total Runs: 1,019
+--
+      Service Checks: Last Run: 0, Total: 0
+      Average Execution Time : 1.149s
+      Last Execution Date : 2026-05-06 03:48:36.251 UTC (1778039316251)
+--
+  Checks Metric Sample: 785,058
+  Dogstatsd Metric Sample: 1
+  Event: 896
+--
+  Service Checks Flushed: 10,879
+
+=============
+--
+Cluster Checks Dispatching
+==========================
+

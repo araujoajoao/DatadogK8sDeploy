@@ -4,7 +4,7 @@ metadata:
   name: rabbitmq
   labels:
     app: rabbitmq
-    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/env: "mentoria"
     tags.datadoghq.com/service: "rabbitmq"
 spec:
   replicas: 1
@@ -15,7 +15,7 @@ spec:
     metadata:
       labels:
         app: rabbitmq
-        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/env: "mentoria"
         tags.datadoghq.com/service: "rabbitmq"
       annotations:
         ad.datadoghq.com/rabbitmq.logs: '[{"source": "rabbitmq", "service": "rabbitmq"}]'
@@ -38,6 +38,9 @@ spec:
         ports:
         - containerPort: 5672
         - containerPort: 15672
+        env:
+        - name: RABBITMQ_LOGS
+          value: /var/log/rabbitmq/rabbit.log    # force log to file instead of stdout
         volumeMounts:
         - name: rabbitmq-logs
           mountPath: /var/log/rabbitmq

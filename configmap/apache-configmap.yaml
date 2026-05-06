@@ -7,6 +7,11 @@ metadata:
   namespace: default
 data:
   apache.yaml: |-
+    init_config:
+
+    instances:
+      - apache_status_url: http://%%host%%/server-status?auto
+
     logs:
       - type: file
         path: /var/log/apache2/access.log

@@ -4,7 +4,7 @@ metadata:
   name: java-app
   labels:
     app: java-app
-    tags.datadoghq.com/env: "develop"
+    tags.datadoghq.com/env: "mentoria"
     tags.datadoghq.com/service: "java-app"
     tags.datadoghq.com/version: "latest"
 spec:
@@ -16,22 +16,11 @@ spec:
     metadata:
       labels:
         app: java-app
-        tags.datadoghq.com/env: "develop"
+        tags.datadoghq.com/env: "mentoria"
         tags.datadoghq.com/service: "java-app"
         tags.datadoghq.com/version: "latest"
+        admission.datadoghq.com/enabled: "true"
       annotations:
-        ad.datadoghq.com/java-app.checks: |
-          {
-            "openmetrics": {
-              "instances": [
-                {
-                  "prometheus_url": "http://%%host%%:8080/metrics",
-                  "namespace": "java_app",
-                  "metrics": ["*"]
-                }
-              ]
-            }
-          }
         ad.datadoghq.com/java-app.logs: '[{"source": "java", "service": "java-app"}]'
     spec:
       containers:
@@ -51,6 +40,8 @@ spec:
           - name: DD_SERVICE
             value: "java-app"
           - name: DD_ENV
-            value: "develop"
+            value: "mentoria"
           - name: DD_VERSION
             value: "latest"
+          - name: DD_RUNTIME_METRICS_ENABLED
+            value: "true"
