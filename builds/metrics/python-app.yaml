@@ -34,6 +34,7 @@ spec:
       containers:
       - name: python-app
         image: araujoajoao/python-app:latest
+        command: ["ddtrace-run", "python", "app.py"]
         ports:
         - containerPort: 5000
         env:
