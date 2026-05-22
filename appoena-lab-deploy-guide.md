@@ -122,7 +122,7 @@ Check the cluster appears in Datadog:
 - Cluster `appoena-lab` should appear within 2–3 minutes
 
 > **Important notes about `datadog-agent.yaml`:**
-> - Agent version `7.78.1` for both nodeAgent and clusterAgent
+> - Agent version `7.79.0` for both nodeAgent and clusterAgent
 > - `eventCollection.collectKubernetesEvents: true` — not `enabled: true` (invalid field)
 > - `databaseMonitoring` is NOT in the features block — enabled via `DD_DATABASE_MONITORING_ENABLED` env var
 > - `DD_CONTAINER_EXCLUDE_LOGS` excludes `kube-system` and `local-path-storage` namespaces from log collection
@@ -242,7 +242,7 @@ Generate traffic to trigger APM traces:
 ```bash
 JAVA_POD=$(kubectl get pod -l app=java-app -o jsonpath='{.items[0].metadata.name}')
 kubectl port-forward $JAVA_POD 8080:8080 &
-sleep 2 && curl http://localhost:8080
+sleep 2 && curl http://localhost:8080/greeting
 kill %1
 
 PYTHON_POD=$(kubectl get pod -l app=python-app -o jsonpath='{.items[0].metadata.name}')
@@ -405,7 +405,7 @@ kind delete cluster --name appoena-lab
 ```
 kubernetes/
   kind-config.yaml          # Cluster: 1 control-plane + 3 workers
-  datadog-agent.yaml        # Datadog Operator CR — agent v7.78.1 + all features
+  datadog-agent.yaml        # Datadog Operator CR — agent v7.79.0 + all features
   datadog-secret.yaml       # Secret template (replace keys before use)
 
 app/
@@ -454,3 +454,6 @@ terraform/
 | kube-system logs in Logs Explorer | `containerCollectAll: true` collects all namespaces | Added `DD_CONTAINER_EXCLUDE_LOGS` for kube-system and local-path-storage |
 | eBPF kprobe errors in connectivity output | kind runs on macOS with a Linux VM; kernel tracefs is shared and locked | Expected/harmless — all other connectivity checks succeed |
 | Cluster Agent WARN: unknown env vars `DD_KUBE_STATE_METRICS_CORE_*` | Variables moved to different config path in newer operator versions | Cosmetic warning only; KSM core checks still function correctly |
+| java-app: APM traces not appearing | Root path `/` returns 404 — tracer instruments requests but 404s are sampled correctly; root cause is wrong curl endpoint | Use `/greeting` for traffic generation: `curl http://localhost:8080/greeting` |
+| python-app: no APM traces despite ddtrace installed | Image has ddtrace pre-installed; `sitecustomize.py` from init container detects it and aborts injection silently | Add `command: ["ddtrace-run", "python", "app.py"]` to deployment — `ddtrace-run` instruments the process directly using the installed ddtrace |
+| dotnet-app: CLR profiler not loading, no APM traces | `CORECLR_PROFILER_PATH` and `DD_DOTNET_TRACER_HOME` pointed to `/datadog-lib/` but the init container places files in `/datadog-lib/package/` | Set `CORECLR_PROFILER_PATH=/datadog-lib/package/Datadog.Trace.ClrProfiler.Native.so` and `DD_DOTNET_TRACER_HOME=/datadog-lib/package` |

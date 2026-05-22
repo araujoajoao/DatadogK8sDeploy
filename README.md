@@ -23,6 +23,24 @@ Kubernetes observability lab deploying Java, Python, and .NET applications on a 
 | Apache | `httpd:latest` |
 | RabbitMQ | `rabbitmq:management` |
 
+## APM Instrumentation
+
+Each app uses the Datadog init-container pattern (manual library injection via `emptyDir` volume) with the following validated configuration:
+
+| App | Language | Method | Init image |
+|---|---|---|---|
+| java-app | Spring Boot | `JAVA_TOOL_OPTIONS=-javaagent:/datadog-lib/package/dd-java-agent.jar` | `dd-lib-java-init` |
+| python-app | Flask | `command: ["ddtrace-run", "python", "app.py"]` — required because ddtrace is pre-installed in the image; the init container's `sitecustomize.py` detects it and aborts if `ddtrace-run` is not used | `dd-lib-python-init` |
+| dotnet-app | ASP.NET Core | `CORECLR_PROFILER_PATH=/datadog-lib/package/Datadog.Trace.ClrProfiler.Native.so` and `DD_DOTNET_TRACER_HOME=/datadog-lib/package` — files land in the `package/` subdirectory, not the root | `dd-lib-dotnet-init` |
+
+**Traffic endpoints for APM trace generation:**
+
+| App | Endpoint | Port |
+|---|---|---|
+| java-app | `/greeting` | 8080 |
+| python-app | `/` | 5000 |
+| dotnet-app | `/weatherforecast` | 80 |
+
 ## Quick start
 
 See [appoena-lab-deploy-guide.md](./appoena-lab-deploy-guide.md) for the full validated step-by-step guide.
