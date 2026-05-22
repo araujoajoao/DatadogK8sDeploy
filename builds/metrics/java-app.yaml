@@ -19,10 +19,18 @@ spec:
         tags.datadoghq.com/env: "mentoria"
         tags.datadoghq.com/service: "java-app"
         tags.datadoghq.com/version: "latest"
-        admission.datadoghq.com/enabled: "true"
       annotations:
         ad.datadoghq.com/java-app.logs: '[{"source": "java", "service": "java-app"}]'
     spec:
+      # 1. INIT CONTAINER: Baixa o tracer oficial e copia para o volume
+      initContainers:
+      - name: datadog-tracer-init
+        image: gcr.io/datadoghq/dd-lib-java-init:latest
+        command: ["sh", "-c", "cp -r /datadog-init/* /datadog-lib/"]
+        volumeMounts:
+        - name: datadog-tracer
+          mountPath: /datadog-lib
+      
       containers:
       - name: java-app
         image: araujoajoao/java-app:latest
@@ -30,11 +38,11 @@ spec:
         - containerPort: 8080
         env:
           - name: DD_AGENT_HOST
-            valueFrom:
-              fieldRef:
-                fieldPath: status.hostIP
+            value: "datadog-agent.default.svc.cluster.local"
           - name: DD_TRACE_AGENT_PORT
             value: "8126"
+          - name: DD_DOGSTATSD_PORT
+            value: "8125"
           - name: DD_LOGS_INJECTION
             value: "true"
           - name: DD_SERVICE
@@ -43,5 +51,15 @@ spec:
             value: "mentoria"
           - name: DD_VERSION
             value: "latest"
-          - name: DD_RUNTIME_METRICS_ENABLED
+          - name: DD_JVM_METRICS_ENABLED
             value: "true"
+        
+        # 3. VOLUME: Monta o mesmo diretório na aplicação final
+        volumeMounts:
+        - name: datadog-tracer
+          mountPath: /datadog-lib
+          
+      # 4. DISCO TEMPORÁRIO COMPARTILHADO
+      volumes:
+      - name: datadog-tracer
+        emptyDir: {}

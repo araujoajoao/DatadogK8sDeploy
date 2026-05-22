@@ -30,6 +30,10 @@ spec:
         hostPort: 8126
       instrumentation:
         enabled: true
+    dogstatsd:
+      hostPortConfig:
+        enabled: true
+        hostPort: 8125
     processDiscovery:
       enabled: true
     orchestratorExplorer:
@@ -50,7 +54,7 @@ spec:
   override:
     nodeAgent:
       image:
-        tag: "7.78.1"
+        tag: "7.79.0"
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
@@ -61,6 +65,8 @@ spec:
       env:
         - name: DD_HOSTNAME
           value: "lab-mentoria"
+        - name: DD_CONTAINER_EXCLUDE
+          value: "name:etcd name:kube-scheduler name:kube-apiserver name:kube-controller-manager"
         - name: DD_KUBERNETES_KUBELET_HOST
           valueFrom:
             fieldRef:
@@ -86,8 +92,8 @@ spec:
         - name: DD_DATABASE_MONITORING_ENABLED
           value: "true"
         - name: DD_IGNORE_AUTOCONF
-          value: "kube_controller_manager"
+          value: "kube_controller_manager kube_scheduler etcd"
     clusterAgent:
       replicas: 1
       image:
-        tag: "7.78.1"
+        tag: "7.79.0"
