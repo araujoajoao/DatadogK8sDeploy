@@ -40,10 +40,4 @@ spec:
         - containerPort: 15672
         env:
         - name: RABBITMQ_LOGS
-          value: /var/log/rabbitmq/rabbit.log    # force log to file instead of stdout
-        volumeMounts:
-        - name: rabbitmq-logs
-          mountPath: /var/log/rabbitmq
-      volumes:
-      - name: rabbitmq-logs
-        emptyDir: {}
+          value: "-"    # log to stdout (Datadog agent collects from container stdout)
