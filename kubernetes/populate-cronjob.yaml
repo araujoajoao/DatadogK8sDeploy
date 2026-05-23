@@ -1,0 +1,61 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: populate
+  namespace: apps
+spec:
+  schedule: "*/15 * * * *"        # every 15 minutes
+  concurrencyPolicy: Forbid        # skip if previous run is still going
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: populate
+          annotations:
+            # prevent SSI from injecting a tracing library into the curl pod
+            admission.datadoghq.com/enabled: "false"
+        spec:
+          restartPolicy: Never
+          containers:
+          - name: populate
+            image: curlimages/curl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+
+              JAVA="http://java-app:8080"
+              PY="http://python-app:5000"
+              DN="http://dotnet-app:80"
+              ROUNDS=3
+
+              hit() {
+                label="$1"; url="$2"
+                code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" || echo "000")
+                echo "[${code}] ${label} ${url}"
+              }
+
+              echo "=== populate started $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="
+
+              i=1
+              while [ $i -le $ROUNDS ]; do
+                echo "-- round $i/$ROUNDS --"
+                hit "java   /greeting      (full chain)" "${JAVA}/greeting"
+                hit "python /              " "${PY}/"
+                hit "python /api/dotnet    (py→dotnet)" "${PY}/api/dotnet"
+                hit "dotnet /weatherforecast" "${DN}/weatherforecast"
+                i=$((i + 1))
+              done
+
+              echo "=== populate done ==="
+            resources:
+              requests:
+                cpu: "50m"
+                memory: "32Mi"
+              limits:
+                cpu: "100m"
+                memory: "64Mi"
