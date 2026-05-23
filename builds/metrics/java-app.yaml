@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: java-app
+  namespace: apps
   labels:
     app: java-app
     tags.datadoghq.com/env: "mentoria"
@@ -20,25 +21,14 @@ spec:
         tags.datadoghq.com/service: "java-app"
         tags.datadoghq.com/version: "latest"
       annotations:
-        ad.datadoghq.com/java-app.logs: '[{"source": "java", "service": "java-app"}]'
+        admission.datadoghq.com/java-lib.version: "latest"
     spec:
-      # 1. INIT CONTAINER: Baixa o tracer oficial e copia para o volume
-      initContainers:
-      - name: datadog-tracer-init
-        image: gcr.io/datadoghq/dd-lib-java-init:latest
-        command: ["sh", "-c", "cp -r /datadog-init/* /datadog-lib/"]
-        volumeMounts:
-        - name: datadog-tracer
-          mountPath: /datadog-lib
-      
       containers:
       - name: java-app
         image: araujoajoao/java-app:latest
         ports:
         - containerPort: 8080
         env:
-          - name: JAVA_TOOL_OPTIONS
-            value: "-javaagent:/datadog-lib/package/dd-java-agent.jar"
           - name: DD_AGENT_HOST
             value: "datadog-agent.default.svc.cluster.local"
           - name: DD_TRACE_AGENT_PORT
@@ -47,6 +37,8 @@ spec:
             value: "8125"
           - name: DD_LOGS_INJECTION
             value: "true"
+          - name: LOGGING_CONFIG
+            value: "/logging/logback.xml"
           - name: DD_SERVICE
             value: "java-app"
           - name: DD_ENV
@@ -55,13 +47,18 @@ spec:
             value: "latest"
           - name: DD_JVM_METRICS_ENABLED
             value: "true"
-        
-        # 3. VOLUME: Monta o mesmo diretório na aplicação final
+          - name: SPRING_MAIN_BANNER_MODE
+            value: "off"
+          - name: PYTHON_FLASK_URL
+            value: "http://python-app:5000"
+          - name: PYTHON_SERVICE_URL
+            value: "http://python-app:5000"
+          - name: SPRING_MVC_ASYNC_REQUEST_TIMEOUT
+            value: "15000"
         volumeMounts:
-        - name: datadog-tracer
-          mountPath: /datadog-lib
-          
-      # 4. DISCO TEMPORÁRIO COMPARTILHADO
+        - name: java-logging-config
+          mountPath: /logging
       volumes:
-      - name: datadog-tracer
-        emptyDir: {}
+      - name: java-logging-config
+        configMap:
+          name: java-logging-config
