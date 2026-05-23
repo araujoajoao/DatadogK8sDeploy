@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: python-logging-patch
+  namespace: apps
+data:
+  entrypoint.py: |
+    import ddtrace.bootstrap.sitecustomize  # patches logging.makeRecord with DD trace context
+
+    import json
+    import logging
+    import sys
+    import urllib.request
+    from datetime import datetime
+    from flask import Flask, Response
+
+    class DDJsonFormatter(logging.Formatter):
+        def format(self, record):
+            log_entry = {
+                "timestamp": datetime.utcfromtimestamp(record.created).strftime(
+                    "%Y-%m-%dT%H:%M:%S"
+                ) + f".{int(record.msecs):03d}Z",
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),
+                "dd.service": record.__dict__.get("dd.service", ""),
+                "dd.env": record.__dict__.get("dd.env", ""),
+                "dd.version": record.__dict__.get("dd.version", ""),
+                "dd.trace_id": record.__dict__.get("dd.trace_id", "0"),
+                "dd.span_id": record.__dict__.get("dd.span_id", "0"),
+            }
+            if record.exc_info:
+                log_entry["error.stack"] = self.formatException(record.exc_info)
+            return json.dumps(log_entry)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(DDJsonFormatter())
+
+    wz = logging.getLogger('werkzeug')
+    wz.addHandler(handler)
+    wz.propagate = False
+    wz.setLevel(logging.INFO)
+
+    app = Flask(__name__)
+
+    @app.route('/')
+    def hello():
+        return "Hello from Python app with Datadog tracing!"
+
+    @app.route('/api/dotnet')
+    def api_dotnet():
+        try:
+            req = urllib.request.urlopen(
+                'http://dotnet-app/weatherforecast', timeout=5
+            )
+            data = req.read().decode()
+            return Response(data, content_type='application/json')
+        except Exception as e:
+            return Response(json.dumps({"error": str(e)}), status=502,
+                            content_type='application/json')
+
+    app.run(host='0.0.0.0', port=5000)

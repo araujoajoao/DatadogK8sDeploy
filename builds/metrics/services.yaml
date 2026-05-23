@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-app
+  namespace: apps
+spec:
+  selector:
+    app: python-app
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-flask
+  namespace: apps
+  labels:
+    app: python-app
+spec:
+  selector:
+    app: python-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 5000
+  - name: flask
+    port: 5000
+    targetPort: 5000
+  - name: java-compat
+    port: 8082
+    targetPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-app
+  namespace: apps
+spec:
+  selector:
+    app: java-app
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dotnet-app
+  namespace: apps
+spec:
+  selector:
+    app: dotnet-app
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  type: LoadBalancer
