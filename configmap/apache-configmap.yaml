@@ -14,8 +14,8 @@ data:
 
     logs:
       - type: file
-        path: /var/log/apache2/access.log
+        path: /usr/local/apache2/logs/access_log
         source: apache
       - type: file
-        path: /var/log/apache2/error.log
+        path: /usr/local/apache2/logs/error_log
         source: apache

@@ -1,6 +1,6 @@
 # Appoena Observability Lab — Deploy Guide
 
-Step-by-step guide to deploy the full stack from scratch. All steps validated and include fixes for all known issues.
+Step-by-step guide to deploy the full stack from scratch. All steps validated against a working cluster.
 
 ---
 
@@ -9,25 +9,32 @@ Step-by-step guide to deploy the full stack from scratch. All steps validated an
 Install the following tools:
 
 ```bash
-brew install kind
-brew install kubectl
-brew install helm
-brew install terraform
+brew install kind kubectl helm terraform
+brew install cloud-provider-kind   # required for LoadBalancer IPs on kind
 ```
 
-Verify installations:
+Verify:
 
 ```bash
-kind version
-kubectl version --client
-helm version
-terraform version
+kind version && kubectl version --client && helm version && terraform version
 ```
 
 You also need:
-- A **Datadog trial account** at [app.datadoghq.com](https://app.datadoghq.com)
-- Your **API Key**: Datadog → Organization Settings → API Keys
-- Your **App Key**: Datadog → Organization Settings → Application Keys
+- A **Datadog account** at [app.datadoghq.com](https://app.datadoghq.com)
+- **API Key**: Organization Settings → API Keys
+- **App Key**: Organization Settings → Application Keys
+
+---
+
+## Step 0 — Start the LoadBalancer Controller
+
+Keep this running in a dedicated terminal for the entire session:
+
+```bash
+sudo cloud-provider-kind
+```
+
+This assigns real LoadBalancer IPs to Services of type `LoadBalancer` in kind clusters. Without it, those Services stay in `<pending>` indefinitely.
 
 ---
 
@@ -60,9 +67,7 @@ appoena-lab-worker3         Ready    <none>          1m
 ```bash
 helm repo add datadog https://helm.datadoghq.com
 helm repo update
-
-helm install datadog-operator datadog/datadog-operator \
-  --namespace default
+helm install datadog-operator datadog/datadog-operator --namespace default
 ```
 
 Wait for the operator to be ready:
@@ -71,13 +76,11 @@ Wait for the operator to be ready:
 kubectl rollout status deployment/datadog-operator -n default
 ```
 
-> **Important:** Install the operator in `default` namespace — this keeps all resources together and avoids Helm release conflicts.
-
 ---
 
 ## Step 3 — Create the Datadog Secret
 
-Replace `YOUR_API_KEY` and `YOUR_APP_KEY` with your actual keys:
+Replace with your actual keys:
 
 ```bash
 kubectl create secret generic datadog-secret \
@@ -86,13 +89,7 @@ kubectl create secret generic datadog-secret \
   --namespace default
 ```
 
-Verify:
-
-```bash
-kubectl get secret datadog-secret
-```
-
-> Do **not** apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values.
+> Do **not** apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
 
 ---
 
@@ -102,35 +99,20 @@ kubectl get secret datadog-secret
 kubectl apply -f kubernetes/datadog-agent.yaml
 ```
 
-Wait for the DaemonSet and Cluster Agent to be ready:
+Wait for the DaemonSet and Cluster Agent:
 
 ```bash
 kubectl rollout status daemonset/datadog-agent
 kubectl rollout status deployment/datadog-cluster-agent
 ```
 
-Verify all agent pods are running:
-
-```bash
-kubectl get pods -l app.kubernetes.io/name=datadog
-```
-
 Expected: one `datadog-agent-*` pod per node (4 total) + one `datadog-cluster-agent-*` pod.
 
-Check the cluster appears in Datadog:
-- Go to **Infrastructure → Kubernetes**
-- Cluster `appoena-lab` should appear within 2–3 minutes
-
-> **Important notes about `datadog-agent.yaml`:**
-> - Agent version `7.79.0` for both nodeAgent and clusterAgent
-> - `eventCollection.collectKubernetesEvents: true` — not `enabled: true` (invalid field)
-> - `databaseMonitoring` is NOT in the features block — enabled via `DD_DATABASE_MONITORING_ENABLED` env var
-> - `DD_CONTAINER_EXCLUDE_LOGS` excludes `kube-system` and `local-path-storage` namespaces from log collection
-> - `DD_IGNORE_AUTOCONF: kube_controller_manager` suppresses a broken check on kind clusters
+Check Datadog UI: **Infrastructure → Kubernetes** — cluster `appoena-lab` appears in 2–3 minutes.
 
 ---
 
-## Step 5 — Deploy ConfigMaps
+## Step 5 — Deploy ConfigMaps (default namespace)
 
 ```bash
 kubectl apply -f configmap/apache-configmap.yaml
@@ -139,28 +121,44 @@ kubectl apply -f configmap/rabbitmq-configmap.yaml
 
 ---
 
-## Step 6 — Deploy Apache
+## Step 6 — Create apps namespace and deploy app ConfigMaps
+
+Apps must run in the `apps` namespace to receive SSI instrumentation (the `default` namespace is excluded).
+
+```bash
+kubectl create namespace apps
+kubectl apply -f configmap/java-logging-config.yaml
+kubectl apply -f configmap/python-logging-patch.yaml
+```
+
+**`java-logging-config.yaml`** — Logback XML ConfigMap that writes structured JSON logs with `dd.trace_id` and `dd.span_id` from MDC.
+
+**`python-logging-patch.yaml`** — Python entrypoint ConfigMap that:
+- Imports `ddtrace.bootstrap.sitecustomize` to enable log injection (needed because ddtrace is pre-installed in the image)
+- Defines a `DDJsonFormatter` that serializes trace context fields
+- Defines both `GET /` and `GET /api/dotnet` Flask routes (the second is called by java-app)
+
+---
+
+## Step 7 — Deploy Apache and RabbitMQ
 
 ```bash
 kubectl apply -f app/apache-deployment.yaml
 kubectl apply -f app/apache-service.yaml
+kubectl apply -f app/rabbitmq-deployment.yaml
+kubectl apply -f app/rabbitmq-service.yaml
 ```
 
-Wait for rollout:
+Wait for rollouts:
 
 ```bash
 kubectl rollout status deployment/apache
+kubectl rollout status deployment/rabbitmq
 ```
 
-Verify `mod_status` is responding:
+**RabbitMQ stdout logging:** The deployment sets `RABBITMQ_LOGS: "-"` which routes all RabbitMQ logs to stdout. The Datadog agent collects container stdout automatically. No log file volume or path configuration is needed.
 
-```bash
-APACHE_POD=$(kubectl get pod -l app=apache -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -it $APACHE_POD -- \
-  sh -c "printf 'GET /server-status?auto HTTP/1.0\r\nHost: localhost\r\n\r\n' | nc localhost 80"
-```
-
-Verify the Datadog check on the correct node agent:
+Verify the Datadog checks are running (target the correct node agent):
 
 ```bash
 APACHE_NODE=$(kubectl get pod -l app=apache -o jsonpath='{.items[0].spec.nodeName}')
@@ -168,38 +166,7 @@ AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent \
   --field-selector spec.nodeName=$APACHE_NODE \
   -o jsonpath='{.items[0].metadata.name}')
 kubectl exec -it $AGENT_POD -- agent check apache
-```
 
-Expected: metrics like `apache.net.hits`, `apache.net.bytes`, `apache.performance.busy_workers`.
-
-> **Note:** `apache-deployment.yaml` uses an init container named `httpd-setup` to enable `mod_status`. The annotation `ad.datadoghq.com/httpd-setup.exclude: "true"` prevents Datadog from autodiscovering the init container.
-
----
-
-## Step 7 — Deploy RabbitMQ
-
-```bash
-kubectl apply -f app/rabbitmq-deployment.yaml
-kubectl apply -f app/rabbitmq-service.yaml
-```
-
-Wait for rollout:
-
-```bash
-kubectl rollout status deployment/rabbitmq
-```
-
-Verify the management API:
-
-```bash
-RABBIT_POD=$(kubectl get pod -l app=rabbitmq -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -it $RABBIT_POD -- \
-  curl -s http://localhost:15672/api/overview -u guest:guest | head -c 200
-```
-
-Verify the Datadog check on the correct node agent:
-
-```bash
 RABBIT_NODE=$(kubectl get pod -l app=rabbitmq -o jsonpath='{.items[0].spec.nodeName}')
 AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent \
   --field-selector spec.nodeName=$RABBIT_NODE \
@@ -207,65 +174,74 @@ AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent \
 kubectl exec -it $AGENT_POD -- agent check rabbitmq
 ```
 
-Expected: `rabbitmq.aliveness` and `rabbitmq.status` with status 0 (OK), 15 metric samples.
-
-> **Note:** `RABBITMQ_LOGS` env var is set to write logs to a file instead of stdout so Datadog log collection works.
-
 ---
 
-## Step 8 — Deploy Applications (Java, Python, .NET)
+## Step 8 — Deploy Applications (Java, Python, .NET) and Services
 
 ```bash
 kubectl apply -f builds/metrics/java-app.yaml
 kubectl apply -f builds/metrics/python-app.yaml
 kubectl apply -f builds/metrics/dotnet-app.yaml
+kubectl apply -f builds/metrics/services.yaml
 ```
 
-Wait for all rollouts:
+`services.yaml` creates:
+- `java-app` LoadBalancer (port 8080)
+- `python-app` LoadBalancer (port 5000)
+- `dotnet-app` LoadBalancer (port 80)
+- `python-flask` ClusterIP alias (ports 80→5000, 5000→5000, **8082→5000**) — required because `GreetingController.java` hardcodes `http://python-flask:8082/api/dotnet`
+
+Wait for rollouts:
 
 ```bash
-kubectl rollout status deployment/java-app
-kubectl rollout status deployment/python-app
-kubectl rollout status deployment/dotnet-app
+kubectl rollout status deployment/java-app -n apps
+kubectl rollout status deployment/python-app -n apps
+kubectl rollout status deployment/dotnet-app -n apps
 ```
 
-Verify pods are running:
+Verify SSI injected init containers (each app pod should show `datadog-lib-*-init` as an init container):
 
 ```bash
-kubectl get pods -l app=java-app
-kubectl get pods -l app=python-app
-kubectl get pods -l app=dotnet-app
+kubectl get pods -n apps -o wide
+kubectl describe pod -l app=java-app -n apps | grep -A5 "Init Containers"
 ```
 
-Generate traffic to trigger APM traces:
+Check LoadBalancer IPs assigned by cloud-provider-kind:
 
 ```bash
-JAVA_POD=$(kubectl get pod -l app=java-app -o jsonpath='{.items[0].metadata.name}')
-kubectl port-forward $JAVA_POD 8080:8080 &
-sleep 2 && curl http://localhost:8080/greeting
-kill %1
-
-PYTHON_POD=$(kubectl get pod -l app=python-app -o jsonpath='{.items[0].metadata.name}')
-kubectl port-forward $PYTHON_POD 8081:5000 &
-sleep 2 && curl http://localhost:8081
-kill %1
-
-DOTNET_POD=$(kubectl get pod -l app=dotnet-app -o jsonpath='{.items[0].metadata.name}')
-kubectl port-forward $DOTNET_POD 8082:80 &
-sleep 2 && curl http://localhost:8082/weatherforecast
-kill %1
+kubectl get svc -n apps
 ```
 
-Confirm APM traces are being sent:
+Expected (IPs may differ):
+
+```
+NAME           TYPE           CLUSTER-IP      EXTERNAL-IP     PORT(S)
+dotnet-app     LoadBalancer   10.96.x.x       192.168.97.7    80:xxxxx/TCP
+java-app       LoadBalancer   10.96.x.x       192.168.97.8    8080:xxxxx/TCP
+python-app     LoadBalancer   10.96.x.x       192.168.97.6    5000:xxxxx/TCP
+python-flask   ClusterIP      10.96.x.x       <none>          80/TCP,5000/TCP,8082/TCP
+```
+
+Generate traffic to trigger distributed traces:
 
 ```bash
-PYTHON_POD=$(kubectl get pod -l app=python-app -o jsonpath='{.items[0].metadata.name}')
-kubectl logs $PYTHON_POD --tail=10 | grep -i "sent\|trace"
+curl http://192.168.97.8:8080/greeting
+curl http://192.168.97.6:5000/
+curl http://192.168.97.6:5000/api/dotnet
+curl http://192.168.97.7:80/weatherforecast
 ```
 
-> **Note:** These demo images do not expose Prometheus `/metrics` endpoints. Observability is via APM traces and log injection only. The `openmetrics` check annotation has been removed from all three apps.
+Use `kubectl get svc -n apps` to confirm the actual IPs on your machine.
 
-> **Note (Python DogStatsD):** The python-app may log `Error submitting packet: [Errno 111] Connection refused` for DogStatsD. This happens because the app sends UDP metrics to `localhost:8125`, but inside Kubernetes the DogStatsD socket lives on the node agent. APM traces and logs still work correctly — this warning only affects custom DogStatsD metrics from this demo image.
+The `/greeting` call on java-app triggers the full distributed trace chain:
+
+```
+java-app /greeting
+  └── calls http://python-flask:8082/api/dotnet   (same trace_id propagated)
+        └── python-app /api/dotnet
+              └── calls http://dotnet-app/weatherforecast
+                    └── dotnet-app /weatherforecast
+```
 
 ---
 
@@ -274,17 +250,12 @@ kubectl logs $PYTHON_POD --tail=10 | grep -i "sent\|trace"
 ```bash
 cd terraform
 terraform init
-```
-
-Apply with your Datadog keys:
-
-```bash
 terraform apply \
   -var="datadog_api_key=YOUR_API_KEY" \
   -var="datadog_app_key=YOUR_APP_KEY"
 ```
 
-This creates:
+Creates:
 
 | Resource | Description |
 |---|---|
@@ -300,18 +271,16 @@ Verify in Datadog:
 
 ## Step 10 — Validate the Full Stack
 
-Run all checks and save output to file:
-
 ```bash
 {
-  echo "===== 1. ALL PODS =====" && \
+  echo "===== 1. ALL PODS (apps namespace) =====" && \
+  kubectl get pods -n apps -o wide && \
+
+  echo "\n===== 2. ALL PODS (default namespace) =====" && \
   kubectl get pods -o wide && \
 
-  echo "\n===== 2. ALL SERVICES =====" && \
-  kubectl get services && \
-
-  echo "\n===== 3. ALL DEPLOYMENTS =====" && \
-  kubectl get deployments && \
+  echo "\n===== 3. ALL SERVICES (apps namespace) =====" && \
+  kubectl get svc -n apps && \
 
   echo "\n===== 4. APACHE CHECK =====" && \
   APACHE_NODE=$(kubectl get pod -l app=apache -o jsonpath='{.items[0].spec.nodeName}') && \
@@ -329,40 +298,21 @@ Run all checks and save output to file:
   echo "RabbitMQ on node: $RABBIT_NODE — Agent: $AGENT_POD" && \
   kubectl exec -it $AGENT_POD -- agent check rabbitmq | grep -E "Service Checks|Metric Samples|Instance ID|Error" && \
 
-  echo "\n===== 6. JAVA APP =====" && \
-  kubectl get pods -l app=java-app && \
-  kubectl logs -l app=java-app --tail=5 && \
+  echo "\n===== 6. JAVA APP LOGS =====" && \
+  kubectl logs -l app=java-app -n apps --tail=5 && \
 
-  echo "\n===== 7. PYTHON APP =====" && \
-  kubectl get pods -l app=python-app && \
-  kubectl logs -l app=python-app --tail=5 && \
+  echo "\n===== 7. PYTHON APP LOGS =====" && \
+  kubectl logs -l app=python-app -n apps --tail=5 && \
 
-  echo "\n===== 8. DOTNET APP =====" && \
-  kubectl get pods -l app=dotnet-app && \
-  kubectl logs -l app=dotnet-app --tail=5 && \
+  echo "\n===== 8. DOTNET APP LOGS =====" && \
+  kubectl logs -l app=dotnet-app -n apps --tail=5 && \
 
-  echo "\n===== 9. AGENT STATUS SUMMARY =====" && \
+  echo "\n===== 9. AGENT APM + LOGS STATUS =====" && \
   kubectl exec -it $(kubectl get pod -l app.kubernetes.io/component=agent -o name | head -1) \
-    -- agent status | grep -E "feature_apm_enabled|feature_auto_instrumentation|Running Checks|APM Agent|Logs Agent|LogsSent|Status: Running|Uptime" -A1 && \
+    -- agent status | grep -E "APM Agent|Logs Agent|feature_apm_enabled|feature_auto_instrumentation|LogsSent" -A2 && \
 
-  echo "\n===== 10. APM STATUS =====" && \
-  kubectl exec -it $(kubectl get pod -l app.kubernetes.io/component=agent -o name | head -1) \
-    -- agent status | grep -A5 "APM Agent" && \
-
-  echo "\n===== 11. LOGS AGENT STATUS =====" && \
-  kubectl exec -it $(kubectl get pod -l app.kubernetes.io/component=agent -o name | head -1) \
-    -- agent status | grep -A15 "^Logs Agent" && \
-
-  echo "\n===== 12. CONNECTIVITY =====" && \
-  kubectl exec -it $(kubectl get pod -l app.kubernetes.io/component=agent -o name | head -1) \
-    -- agent diagnose --include connectivity-datadog-core-endpoints 2>&1 | tail -20 && \
-
-  echo "\n===== 13. DATADOG AGENT CR STATUS =====" && \
-  kubectl get datadogagent datadog -o jsonpath='{.status}' | python3 -m json.tool && \
-
-  echo "\n===== 14. CLUSTER AGENT STATUS =====" && \
-  kubectl exec -it $(kubectl get pod -l app.kubernetes.io/component=cluster-agent -o name) \
-    -- datadog-cluster-agent status | grep -E "Running Checks|Service Checks|Metric Sample|Event:|Flushed|WARNING|ERROR" -A2
+  echo "\n===== 10. DATADOG AGENT CR STATUS =====" && \
+  kubectl get datadogagent datadog -o jsonpath='{.status}' | python3 -m json.tool
 
 } 2>&1 | tee deploy-validation-$(date +%Y%m%d-%H%M%S).txt
 ```
@@ -373,16 +323,15 @@ Run all checks and save output to file:
 
 | What to check | Where | Filter |
 |---|---|---|
-| Cluster infrastructure | Infrastructure → Kubernetes | cluster: appoena-lab |
-| APM traces | APM → Services | env: mentoria |
-| Logs (apps only) | Logs → Explorer | `service:(apache OR rabbitmq OR java-app OR python-app OR dotnet-app) env:mentoria` |
-| APM metrics | Metrics → Explorer | `trace.http.request.hits{env:mentoria}` |
-| Runtime metrics | Metrics → Explorer | `jvm.*` / `runtime.*` |
+| Cluster infrastructure | Infrastructure → Kubernetes | `cluster:appoena-lab` |
+| APM distributed traces | APM → Traces | `env:mentoria` |
+| APM services | APM → Services | `env:mentoria` |
+| Logs (apps only) | Logs → Explorer | `service:(java-app OR python-app OR dotnet-app OR apache OR rabbitmq) env:mentoria` |
 | Apache metrics | Metrics → Explorer | `apache.*` |
 | RabbitMQ metrics | Metrics → Explorer | `rabbitmq.*` |
-| Kubernetes metrics | Metrics → Explorer | `kubernetes.cpu.usage.total` |
-
-> **Tip:** Save the log filter `service:(apache OR rabbitmq OR java-app OR python-app OR dotnet-app) env:mentoria` as a view in Logs Explorer for quick access to application logs only.
+| JVM metrics | Metrics → Explorer | `jvm.*` |
+| Monitors | Monitors → Manage | `[mentoria]` |
+| Dashboard | Dashboards → List | `Application Error Dashboard` |
 
 ---
 
@@ -400,60 +349,58 @@ kind delete cluster --name appoena-lab
 
 ---
 
-## File Reference
+## Repository Structure
 
 ```
 kubernetes/
-  kind-config.yaml          # Cluster: 1 control-plane + 3 workers
-  datadog-agent.yaml        # Datadog Operator CR — agent v7.79.0 + all features
-  datadog-secret.yaml       # Secret template (replace keys before use)
+  kind-config.yaml          # Cluster: 1 control-plane + 3 workers, linux/arm64
+  datadog-agent.yaml        # DatadogAgent CR (v2alpha1) — agent 7.79.0, SSI, extraConfd log rules
+  datadog-secret.yaml       # Template only — create secret via kubectl, never apply this file
 
 app/
-  apache-deployment.yaml    # Apache with mod_status init container + Datadog autodiscovery
-  apache-service.yaml       # ClusterIP on port 80
-  rabbitmq-deployment.yaml  # RabbitMQ management image + log file env var
-  rabbitmq-service.yaml     # ClusterIP on ports 5672 and 15672
+  apache-deployment.yaml    # Apache with mod_status init container (default namespace)
+  apache-service.yaml       # ClusterIP port 80
+  rabbitmq-deployment.yaml  # RabbitMQ management, RABBITMQ_LOGS="-" for stdout (default namespace)
+  rabbitmq-service.yaml     # ClusterIP ports 5672 + 15672
 
 configmap/
-  apache-configmap.yaml     # Apache log paths for Datadog
-  rabbitmq-configmap.yaml   # RabbitMQ log paths for Datadog
+  apache-configmap.yaml     # Reference — checks/logs driven by pod annotations
+  rabbitmq-configmap.yaml   # Reference — checks/logs driven by pod annotations
+  java-logging-config.yaml  # Logback JSON pattern with dd.trace_id (apps namespace)
+  python-logging-patch.yaml # Flask entrypoint: ddtrace bootstrap + DDJsonFormatter + /api/dotnet route (apps namespace)
 
 builds/metrics/
-  java-app.yaml             # Java Spring Boot — APM + logs on port 8080
-  python-app.yaml           # Python Flask — APM + logs on port 5000
-  dotnet-app.yaml           # ASP.NET Core — APM + logs on port 80
+  java-app.yaml             # Spring Boot — SSI annotation, port 8080, LoadBalancer
+  python-app.yaml           # Flask py311 — SSI annotation, port 5000, LoadBalancer
+  dotnet-app.yaml           # ASP.NET Core — SSI annotation, port 80, LoadBalancer
+  services.yaml             # All app Services including python-flask alias (ports 80/5000/8082→5000)
 
 terraform/
-  providers.tf              # Datadog Terraform provider
-  variables.tf              # API/App key inputs
-  monitors.tf               # Memory alert + CrashLoopBackOff monitor
+  providers.tf              # Datadog provider ~3.0
+  variables.tf              # api_key, app_key, notification_email, env
+  monitors.tf               # Pod memory alert + CrashLoopBackOff monitor
   dashboard.tf              # Application Error Dashboard
 ```
 
 ---
 
-## Known Issues & Notes
+## Known Issues & Fixes Applied
 
 | Issue | Root Cause | Fix Applied |
 |---|---|---|
 | `unknown field spec.features.databaseMonitoring` | Not a valid v2alpha1 CRD field | Moved to `DD_DATABASE_MONITORING_ENABLED` env var |
 | `unknown field spec.features.eventCollection.enabled` | Wrong field name in CRD schema | Changed to `collectKubernetesEvents: true` |
 | Apache 404 on `/server-status` | `mod_status` not enabled in `httpd:latest` | Init container `httpd-setup` patches `httpd.conf` |
-| Apache check excluded by autodiscovery | Init container matched `httpd` autodiscovery ID | Renamed to `httpd-setup` + `exclude: "true"` annotation |
-| `agent check apache/rabbitmq` — no valid check found | Command ran on wrong node agent | Use `--field-selector spec.nodeName=` to target correct agent |
-| `agent check rabbitmq` — no valid check found (right node) | Agent pod restarted recently; check not yet scheduled | Wait ~60s after agent restart and retry; confirmed working at steady state |
-| RabbitMQ logs empty | Default logging goes to stdout only | Added `RABBITMQ_LOGS` env var to write to file |
-| java-app openmetrics 404 | App does not expose Prometheus endpoint | Removed openmetrics annotation — APM + logs only |
-| python-app wrong port | Image exposes port `5000` not `8000` | Fixed `containerPort` to `5000` |
-| python-app openmetrics 404 | Flask app has no `/metrics` route | Removed openmetrics annotation — APM + logs only |
-| python-app `DogStatsD Connection refused` warnings in logs | App sends UDP metrics to `localhost:8125`; DogStatsD is on the node agent, not localhost | Expected behavior for this demo image — APM traces and logs still work. Fix: set `DD_AGENT_HOST` to `status.hostIP` in the deployment env vars |
-| dotnet-app wrong port | Image exposes port `80` via `ASPNETCORE_URLS` | Fixed `containerPort` to `80` |
-| dotnet-app openmetrics 404 | ASP.NET Core app has no `/metrics` route | Removed openmetrics annotation — APM + logs only |
-| dotnet-app traffic endpoint | Root path `/` returns empty; valid route is `/weatherforecast` | Updated port-forward curl to use `/weatherforecast` |
-| kube-controller-manager check broken | Check not in catalog on kind clusters | Added `DD_IGNORE_AUTOCONF: kube_controller_manager` |
-| kube-system logs in Logs Explorer | `containerCollectAll: true` collects all namespaces | Added `DD_CONTAINER_EXCLUDE_LOGS` for kube-system and local-path-storage |
-| eBPF kprobe errors in connectivity output | kind runs on macOS with a Linux VM; kernel tracefs is shared and locked | Expected/harmless — all other connectivity checks succeed |
-| Cluster Agent WARN: unknown env vars `DD_KUBE_STATE_METRICS_CORE_*` | Variables moved to different config path in newer operator versions | Cosmetic warning only; KSM core checks still function correctly |
-| java-app: APM traces not appearing | Root path `/` returns 404 — tracer instruments requests but 404s are sampled correctly; root cause is wrong curl endpoint | Use `/greeting` for traffic generation: `curl http://localhost:8080/greeting` |
-| python-app: no APM traces despite ddtrace installed | Image has ddtrace pre-installed; `sitecustomize.py` from init container detects it and aborts injection silently | Add `command: ["ddtrace-run", "python", "app.py"]` to deployment — `ddtrace-run` instruments the process directly using the installed ddtrace |
-| dotnet-app: CLR profiler not loading, no APM traces | `CORECLR_PROFILER_PATH` and `DD_DOTNET_TRACER_HOME` pointed to `/datadog-lib/` but the init container places files in `/datadog-lib/package/` | Set `CORECLR_PROFILER_PATH=/datadog-lib/package/Datadog.Trace.ClrProfiler.Native.so` and `DD_DOTNET_TRACER_HOME=/datadog-lib/package` |
+| `agent check apache/rabbitmq` — no valid check found | Command ran on wrong node agent | Use `--field-selector spec.nodeName=` to target the correct agent |
+| RabbitMQ log collection — Bytes Read: 0 | Default log destination was a file path inside a container; Datadog agent cannot access it | Changed `RABBITMQ_LOGS: "-"` to route logs to stdout; removed emptyDir log volume |
+| java-app `/greeting` → `UnknownHostException: python-flask` | `GreetingController.java:28` hardcodes `http://python-flask:8082/api/dotnet` but no Service named `python-flask` existed | Created `python-flask` ClusterIP Service with selector `app: python-app` |
+| java-app `/greeting` → 136-second TCP timeout (DNS resolves but connection hangs) | `python-flask` Service had ports 80 and 5000 only; java-app connects on port 8082 (confirmed via `/proc/net/tcp6` SYN_SENT analysis) | Added port `8082→5000` to the `python-flask` Service |
+| python-app `dd.trace_id: "0"` and `dd.service: ""` in logs | `ddtrace` is pre-installed in the image; SSI's `sitecustomize.py` detects it and aborts trace injection | Added `import ddtrace.bootstrap.sitecustomize` at the top of `entrypoint.py` ConfigMap — initializes ddtrace log injection without image rebuild |
+| python-app `/api/dotnet` → 404 | Flask app had only `GET /`; java-app calls `/api/dotnet` on python-flask | Added `GET /api/dotnet` route to `entrypoint.py` ConfigMap — calls `http://dotnet-app/weatherforecast` and returns the response |
+| ConfigMap namespace mismatch | `java-logging-config.yaml` and `python-logging-patch.yaml` had `namespace: default`; apps run in `apps` namespace and cannot mount ConfigMaps from another namespace | Changed both ConfigMaps to `namespace: apps` |
+| java-app and python-app openmetrics 404 | Demo images do not expose a Prometheus `/metrics` endpoint | Removed `openmetrics` autodiscovery annotations — observability is via APM + log injection |
+| dotnet-app openmetrics 404 | ASP.NET Core demo image has no `/metrics` route | Removed `openmetrics` annotation — APM traces and logs work via SSI |
+| kube-controller-manager check broken on kind | Check is not in catalog for kind clusters | Added `DD_IGNORE_AUTOCONF: kube_controller_manager` to node agent env |
+| kube-system logs in Logs Explorer | `containerCollectAll: true` collects all namespaces | Added `DD_CONTAINER_EXCLUDE_LOGS` for `kube-system` and `local-path-storage` |
+| eBPF kprobe errors in agent diagnostics | kind runs on macOS via OrbStack; tracefs is shared and locked by the VM kernel | Expected/harmless — all Datadog connectivity checks succeed |
+| python-app DogStatsD `Connection refused` in logs | Demo image sends UDP metrics to `localhost:8125`; DogStatsD socket lives on the node agent host | Expected behavior for this demo image. APM traces and logs work correctly. Fix if needed: set `DD_AGENT_HOST` to `status.hostIP` via downward API |
