@@ -50,6 +50,8 @@ spec:
     admissionController:
       enabled: true
       mutateUnlabelled: false
+    remoteConfiguration:
+      enabled: true
     npm:
       enabled: true
     usm:
@@ -57,7 +59,7 @@ spec:
   override:
     nodeAgent:
       image:
-        tag: "7.79.0"
+        tag: "7.80.0"
       tolerations:
         - effect: NoSchedule
           key: node-role.kubernetes.io/control-plane
@@ -130,4 +132,4 @@ spec:
     clusterAgent:
       replicas: 1
       image:
-        tag: "7.79.0"
+        tag: "7.80.0"
