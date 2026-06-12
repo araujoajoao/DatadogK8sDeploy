@@ -44,6 +44,8 @@ This assigns real LoadBalancer IPs to Services of type `LoadBalancer` in kind cl
 kind create cluster --config kubernetes/kind-config.yaml --name appoena-lab
 ```
 
+> **Note:** `kubernetes/kind-config.yaml` contains a hardcoded Mac LAN IP (`192.168.15.25`) in `certSANs`. If your local IP has changed, update that field before creating the cluster.
+
 Verify all nodes are Ready:
 
 ```bash
@@ -102,8 +104,8 @@ kubectl apply -f kubernetes/datadog-agent.yaml
 Wait for the DaemonSet and Cluster Agent:
 
 ```bash
-kubectl rollout status daemonset/datadog-agent
-kubectl rollout status deployment/datadog-cluster-agent
+kubectl rollout status daemonset/datadog-agent -n default
+kubectl rollout status deployment/datadog-cluster-agent -n default
 ```
 
 Expected: one `datadog-agent-*` pod per node (4 total) + one `datadog-cluster-agent-*` pod.
@@ -245,14 +247,20 @@ java-app /greeting
 
 ---
 
-## Step 9 — Deploy Monitors and Dashboard (Terraform)
+## Step 9 — Deploy Monitors and Dashboard
 
 ```bash
-cd terraform
-terraform init
-terraform apply \
-  -var="datadog_api_key=YOUR_API_KEY" \
-  -var="datadog_app_key=YOUR_APP_KEY"
+# Option A — Shell script (recommended, no Terraform)
+export DATADOG_API_KEY=YOUR_API_KEY
+export DATADOG_APP_KEY=YOUR_APP_KEY
+./scripts/deploy-datadog-resources.sh
+
+# Option B — Terraform (legacy)
+# cd terraform
+# terraform init
+# terraform apply \
+#   -var="datadog_api_key=YOUR_API_KEY" \
+#   -var="datadog_app_key=YOUR_APP_KEY"
 ```
 
 Creates:
@@ -338,13 +346,16 @@ Verify in Datadog:
 ## Teardown
 
 ```bash
-# Destroy Terraform resources first
-cd terraform && terraform destroy \
-  -var="datadog_api_key=YOUR_API_KEY" \
-  -var="datadog_app_key=YOUR_APP_KEY"
+# Destroy Datadog monitors and dashboard (shell script — recommended)
+./scripts/destroy-datadog-resources.sh
 
 # Delete the kind cluster — removes all Kubernetes resources
 kind delete cluster --name appoena-lab
+
+# Alternatively — Terraform teardown (legacy)
+# cd terraform && terraform destroy \
+#   -var="datadog_api_key=YOUR_API_KEY" \
+#   -var="datadog_app_key=YOUR_APP_KEY"
 ```
 
 ---
@@ -374,6 +385,10 @@ builds/metrics/
   python-app.yaml           # Flask py311 — SSI annotation, port 5000, LoadBalancer
   dotnet-app.yaml           # ASP.NET Core — SSI annotation, port 80, LoadBalancer
   services.yaml             # All app Services including python-flask alias (ports 80/5000/8082→5000)
+
+scripts/
+  deploy-datadog-resources.sh   # Creates Datadog monitors + dashboard via API (no Terraform)
+  destroy-datadog-resources.sh  # Deletes Datadog monitors + dashboard via API
 
 terraform/
   providers.tf              # Datadog provider ~3.0
