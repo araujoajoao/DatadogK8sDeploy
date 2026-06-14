@@ -108,6 +108,14 @@ brew install cloud-provider-kind   # required for LoadBalancer IPs on kind
 
 You also need a [Datadog account](https://app.datadoghq.com) with an API Key and App Key.
 
+Copy the example environment file and fill in your credentials:
+
+```bash
+cp .env.example .env
+# Edit .env with your real DATADOG_API_KEY and DATADOG_APP_KEY
+source .env
+```
+
 ### Deploy
 
 ```bash
@@ -150,13 +158,14 @@ kubectl apply -f builds/metrics/
 # 9. Provision Datadog monitors and dashboard
 #
 # Option A — Shell script (recommended, no Terraform)
-export DATADOG_API_KEY=YOUR_API_KEY
-export DATADOG_APP_KEY=YOUR_APP_KEY
+# Ensure .env is sourced (keys are read automatically by the scripts)
 ./scripts/deploy-datadog-resources.sh
 #
 # Option B — Terraform (legacy)
 # cd terraform && terraform init
-# terraform apply -var="datadog_api_key=YOUR_API_KEY" -var="datadog_app_key=YOUR_APP_KEY"
+# terraform apply \
+#   -var="datadog_api_key=${DATADOG_API_KEY}" \
+#   -var="datadog_app_key=${DATADOG_APP_KEY}"
 ```
 
 ## Repository Structure
@@ -218,6 +227,6 @@ kind delete cluster --name appoena-lab
 
 # Alternatively — Terraform teardown (legacy)
 # cd terraform && terraform destroy \
-#   -var="datadog_api_key=YOUR_API_KEY" \
-#   -var="datadog_app_key=YOUR_APP_KEY"
+#   -var="datadog_api_key=${DATADOG_API_KEY}" \
+#   -var="datadog_app_key=${DATADOG_APP_KEY}"
 ```
