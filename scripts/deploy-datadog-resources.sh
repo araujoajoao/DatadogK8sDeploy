@@ -6,6 +6,13 @@
 
 set -euo pipefail
 
+# ── Auto-source .env if present ───────────────────────────────────────────────
+ENV_FILE="$(dirname "$0")/../.env"
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck source=/dev/null
+    source "$ENV_FILE"
+fi
+
 # ── Defaults ──────────────────────────────────────────────────────────────────
 
 NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-araujoaojoao@gmail.com}"
