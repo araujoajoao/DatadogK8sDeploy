@@ -1,3 +1,4 @@
 .DS_Store
+.env
 kubernetes/datadog-secret.yaml
 deploy-validation-*.txt
