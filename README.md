@@ -11,14 +11,14 @@ Kubernetes observability lab running Java, Python, and .NET applications on a lo
 - Log-trace correlation with real `dd.trace_id` propagation in all three apps
 - JSON structured logs with multiline rules at the agent level
 - Infrastructure metrics: Apache, RabbitMQ, Kubernetes, JVM/runtime
-- Monitors and dashboard provisioned via Terraform
+- Monitors and dashboard provisioned via shell script or Terraform
 
 ## Stack
 
 | Component | Image / Version |
 |---|---|
-| Datadog Agent | `7.79.0` |
-| Datadog Cluster Agent | `7.79.0` |
+| Datadog Agent | `7.80.0` |
+| Datadog Cluster Agent | `7.80.0` |
 | Java app | `araujoajoao/java-app:latest` (Spring Boot, port 8080) |
 | Python app | `araujoajoao/python-app:py311` (Flask, Python 3.11, port 5000) |
 | .NET app | `araujoajoao/dotnet-app:latest` (ASP.NET Core, port 80) |
@@ -83,6 +83,8 @@ Apps expose LoadBalancer IPs via `cloud-provider-kind`. Run `sudo cloud-provider
 
 IPs may differ on your machine — check with `kubectl get svc -n apps`.
 
+> **Generate traffic automatically:** After deployment, run `./populate.sh` to send requests to all endpoints and trigger distributed traces in Datadog.
+
 ## Log-Trace Correlation
 
 | App | Format | Trace field |
@@ -106,6 +108,14 @@ brew install cloud-provider-kind   # required for LoadBalancer IPs on kind
 
 You also need a [Datadog account](https://app.datadoghq.com) with an API Key and App Key.
 
+Copy the example environment file and fill in your credentials:
+
+```bash
+cp .env.example .env
+# Edit .env with your real DATADOG_API_KEY and DATADOG_APP_KEY
+source .env
+```
+
 ### Deploy
 
 ```bash
@@ -122,7 +132,10 @@ helm install datadog-operator datadog/datadog-operator --namespace default
 # 3. Create the Datadog secret
 kubectl create secret generic datadog-secret \
   --from-literal=api-key=YOUR_API_KEY \
-  --from-literal=app-key=YOUR_APP_KEY
+  --from-literal=app-key=YOUR_APP_KEY \
+  --namespace default
+
+> Do not apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
 
 # 4. Deploy the Datadog Agent
 kubectl apply -f kubernetes/datadog-agent.yaml
@@ -142,9 +155,17 @@ kubectl apply -f app/
 # 8. Deploy apps and services
 kubectl apply -f builds/metrics/
 
-# 9. Provision Terraform monitors and dashboard
-cd terraform && terraform init
-terraform apply -var="datadog_api_key=YOUR_API_KEY" -var="datadog_app_key=YOUR_APP_KEY"
+# 9. Provision Datadog monitors and dashboard
+#
+# Option A — Shell script (recommended, no Terraform)
+# Ensure .env is sourced (keys are read automatically by the scripts)
+./scripts/deploy-datadog-resources.sh
+#
+# Option B — Terraform (legacy)
+# cd terraform && terraform init
+# terraform apply \
+#   -var="datadog_api_key=${DATADOG_API_KEY}" \
+#   -var="datadog_app_key=${DATADOG_APP_KEY}"
 ```
 
 ## Repository Structure
@@ -173,6 +194,10 @@ builds/metrics/
   dotnet-app.yaml           # ASP.NET Core — SSI annotation, port 80, LoadBalancer
   services.yaml             # All app Services including python-flask alias (ports 80/5000/8082)
 
+scripts/
+  deploy-datadog-resources.sh   # Creates Datadog monitors + dashboard via API (no Terraform)
+  destroy-datadog-resources.sh  # Deletes Datadog monitors + dashboard via API
+
 terraform/
   providers.tf              # Datadog provider ~3.0
   variables.tf              # api_key, app_key, notification_email, env
@@ -194,9 +219,14 @@ terraform/
 ## Teardown
 
 ```bash
-cd terraform && terraform destroy \
-  -var="datadog_api_key=YOUR_API_KEY" \
-  -var="datadog_app_key=YOUR_APP_KEY"
+# Destroy Datadog monitors and dashboard (shell script — recommended)
+./scripts/destroy-datadog-resources.sh
 
+# Delete the kind cluster
 kind delete cluster --name appoena-lab
+
+# Alternatively — Terraform teardown (legacy)
+# cd terraform && terraform destroy \
+#   -var="datadog_api_key=${DATADOG_API_KEY}" \
+#   -var="datadog_app_key=${DATADOG_APP_KEY}"
 ```
