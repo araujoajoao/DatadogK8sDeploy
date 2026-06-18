@@ -6,6 +6,15 @@
 
 set -euo pipefail
 
+# Prevent this script's commands from entering interactive bash history
+set +o history 2>/dev/null || true
+
+# Guard against accidental sourcing
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    echo "[ERROR] Do not source this script. Run: bash $0" >&2
+    return 1 2>/dev/null || exit 1
+fi
+
 # ── Auto-source .env if present ───────────────────────────────────────────────
 ENV_FILE="$(dirname "$0")/../.env"
 if [[ -f "$ENV_FILE" ]]; then
@@ -15,7 +24,7 @@ fi
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 
-NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-araujoaojoao@gmail.com}"
+NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-joao.araujo@appoena.io}"
 ENV="${ENV:-mentoria}"
 
 DATADOG_API_KEY="${DATADOG_API_KEY:-}"
@@ -38,7 +47,7 @@ Required environment variables:
 
 Optional environment variables:
   NOTIFICATION_EMAIL    Email address for alert notifications
-                        (default: araujoaojoao@gmail.com)
+                        (default: joao.araujo@appoena.io)
   ENV                   Environment name used as a tag and in resource names
                         (default: mentoria)
 EOF
@@ -135,15 +144,15 @@ trap cleanup EXIT
 
 cat > "$PAYLOAD_MEM_MONITOR" << EOF
 {
-  "name": "[${ENV}] Pod Memory Usage Above 75%",
+  "name": "[${ENV}] Pod Memory Usage Above 98%",
   "type": "metric alert",
-  "query": "max(last_5m):( max:kubernetes.memory.usage{env:${ENV}} by {pod_name,kube_namespace} / max:kubernetes.memory.limits{env:${ENV}} by {pod_name,kube_namespace} ) * 100 > 75",
-  "message": "Pod {{pod_name.name}} in namespace {{kube_namespace.name}} is using more than 75% of its memory limit.\n\nCheck the pod logs and resource usage.\n\n@${NOTIFICATION_EMAIL}",
+  "query": "max(last_5m):( max:kubernetes.memory.usage{env:${ENV}} by {pod_name,kube_namespace} / max:kubernetes.memory.limits{env:${ENV}} by {pod_name,kube_namespace} ) * 100 > 98",
+  "message": "Pod {{pod_name.name}} in namespace {{kube_namespace.name}} is using more than 98% of its memory limit.\n\nCheck the pod logs and resource usage.\n\n@${NOTIFICATION_EMAIL}",
   "tags": ["env:${ENV}", "team:observability", "project:appoena-lab"],
   "options": {
     "thresholds": {
-      "critical": 75,
-      "warning": 60
+      "critical": 98,
+      "warning": 95
     },
     "notify_no_data": false,
     "renotify_interval": 30
@@ -151,14 +160,25 @@ cat > "$PAYLOAD_MEM_MONITOR" << EOF
 }
 EOF
 
-log "Creating monitor: Pod Memory Usage Above 75% ..."
+log "Creating monitor: Pod Memory Usage Above 98% ..."
 
-MEM_RESPONSE=$(api_post "/monitor" "$PAYLOAD_MEM_MONITOR")
-MEM_ID=$(printf '%s' "$MEM_RESPONSE" | jq -r '.id')
+MEM_RESPONSE=$(api_post "/monitor" "$PAYLOAD_MEM_MONITOR" 2>&1 || true)
+MEM_ID=$(printf '%s' "$MEM_RESPONSE" | jq -r '.id // empty' 2>/dev/null || true)
 if [[ -z "$MEM_ID" || "$MEM_ID" == "null" ]]; then
-    die "Failed to parse monitor ID from response: ${MEM_RESPONSE}"
+    # May be a duplicate — try to find existing monitor by name
+    MEM_ID=$(curl -s -G \
+        -H "${HEADER_API_KEY}" \
+        -H "${HEADER_APP_KEY}" \
+        --data-urlencode "query=name:\"[${ENV}] Pod Memory Usage Above 98%\"" \
+        "${API_BASE}/monitor" | jq -r '.[0].id // empty' 2>/dev/null || true)
+    if [[ -n "$MEM_ID" && "$MEM_ID" != "null" ]]; then
+        log "  → already exists with ID ${MEM_ID}"
+    else
+        die "Failed to create or find monitor. Response: ${MEM_RESPONSE}"
+    fi
+else
+    log "  → created with ID ${MEM_ID}"
 fi
-log "  → created with ID ${MEM_ID}"
 
 # ── Monitor 2: Pod in CrashLoopBackOff ────────────────────────────────────────
 
@@ -181,12 +201,23 @@ EOF
 
 log "Creating monitor: Pod in CrashLoopBackOff ..."
 
-CRASHLOOP_RESPONSE=$(api_post "/monitor" "$PAYLOAD_CRASHLOOP_MONITOR")
-CRASHLOOP_ID=$(printf '%s' "$CRASHLOOP_RESPONSE" | jq -r '.id')
+CRASHLOOP_RESPONSE=$(api_post "/monitor" "$PAYLOAD_CRASHLOOP_MONITOR" 2>&1 || true)
+CRASHLOOP_ID=$(printf '%s' "$CRASHLOOP_RESPONSE" | jq -r '.id // empty' 2>/dev/null || true)
 if [[ -z "$CRASHLOOP_ID" || "$CRASHLOOP_ID" == "null" ]]; then
-    die "Failed to parse monitor ID from response: ${CRASHLOOP_RESPONSE}"
+    # May be a duplicate — try to find existing monitor by name
+    CRASHLOOP_ID=$(curl -s -G \
+        -H "${HEADER_API_KEY}" \
+        -H "${HEADER_APP_KEY}" \
+        --data-urlencode "query=name:\"[${ENV}] Pod in CrashLoopBackOff\"" \
+        "${API_BASE}/monitor" | jq -r '.[0].id // empty' 2>/dev/null || true)
+    if [[ -n "$CRASHLOOP_ID" && "$CRASHLOOP_ID" != "null" ]]; then
+        log "  → already exists with ID ${CRASHLOOP_ID}"
+    else
+        die "Failed to create or find monitor. Response: ${CRASHLOOP_RESPONSE}"
+    fi
+else
+    log "  → created with ID ${CRASHLOOP_ID}"
 fi
-log "  → created with ID ${CRASHLOOP_ID}"
 
 # ── Dashboard: Application Error Dashboard ────────────────────────────────────
 # Use unquoted EOF so bash expands ${ENV} directly into the JSON payload.
@@ -332,7 +363,7 @@ echo
 echo "Environment : ${ENV}"
 echo "Notification: ${NOTIFICATION_EMAIL}"
 echo
-printf '  %-35s %s\n' "Pod Memory Usage Above 75%" "monitor ID ${MEM_ID}"
+printf '  %-35s %s\n' "Pod Memory Usage Above 98%" "monitor ID ${MEM_ID}"
 printf '  %-35s %s\n' "Pod in CrashLoopBackOff"     "monitor ID ${CRASHLOOP_ID}"
 printf '  %-35s %s\n' "Application Error Dashboard" "dashboard ID ${DASH_ID}"
 echo
