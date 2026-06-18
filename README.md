@@ -29,7 +29,8 @@ Kubernetes observability lab running Java, Python, and .NET applications on a lo
 
 | Namespace | What lives here |
 |---|---|
-| `default` | Datadog agent DaemonSet, Cluster Agent, Apache, RabbitMQ |
+| `datadog` | Datadog agent DaemonSet, Cluster Agent, Operator |
+| `default` | Apache, RabbitMQ (infrastructure) |
 | `apps` | java-app, python-app, dotnet-app and their Services |
 
 SSI is disabled for `kube-system` and `default` — **apps must be in the `apps` namespace** to receive automatic instrumentation.
@@ -135,12 +136,12 @@ kubectl create secret generic datadog-secret \
   --from-literal=app-key="$DATADOG_APP_KEY" \
   -n datadog
 
-> Do not apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
+Do not apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
 
 # 4. Deploy the Datadog Agent
 kubectl apply -f kubernetes/datadog-agent.yaml
 
-# 5. Deploy ConfigMaps (default namespace — for apache/rabbitmq in default)
+# 5. Deploy infrastructure ConfigMaps (Apache + RabbitMQ)
 kubectl apply -f configmap/apache-configmap.yaml
 kubectl apply -f configmap/rabbitmq-configmap.yaml
 
@@ -173,7 +174,7 @@ kubectl apply -f builds/metrics/
 ```
 kubernetes/
   kind-config.yaml          # Cluster: 1 control-plane + 3 workers
-  datadog-agent.yaml        # DatadogAgent CR (v2alpha1) — all features + extraConfd log rules
+  datadog-agent.yaml        # DatadogAgent CR (v2alpha1) — agent 7.80.0, SSI, extraConfd log rules
   datadog-secret.yaml       # Template only — create secret via kubectl, never apply this file
 
 app/

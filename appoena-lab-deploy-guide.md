@@ -122,7 +122,7 @@ Check Datadog UI: **Infrastructure → Kubernetes** — cluster `appoena-lab` ap
 
 ---
 
-## Step 5 — Deploy ConfigMaps (default namespace)
+## Step 5 — Deploy Infrastructure ConfigMaps (Apache + RabbitMQ)
 
 ```bash
 kubectl apply -f configmap/apache-configmap.yaml
@@ -172,16 +172,16 @@ Verify the Datadog checks are running (target the correct node agent):
 
 ```bash
 APACHE_NODE=$(kubectl get pod -l app=apache -o jsonpath='{.items[0].spec.nodeName}')
-AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent \
+AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent -n datadog \
   --field-selector spec.nodeName=$APACHE_NODE \
   -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -it $AGENT_POD -- agent check apache
+kubectl exec -it -n datadog $AGENT_POD -- agent check apache
 
 RABBIT_NODE=$(kubectl get pod -l app=rabbitmq -o jsonpath='{.items[0].spec.nodeName}')
-AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent \
+AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent -n datadog \
   --field-selector spec.nodeName=$RABBIT_NODE \
   -o jsonpath='{.items[0].metadata.name}')
-kubectl exec -it $AGENT_POD -- agent check rabbitmq
+kubectl exec -it -n datadog $AGENT_POD -- agent check rabbitmq
 ```
 
 ---
@@ -274,7 +274,7 @@ Creates:
 
 | Resource | Description |
 |---|---|
-| Monitor: **Pod Memory Usage Above 75%** | Warning at 60%, critical at 75%. Notifies by email. |
+| Monitor: **Pod Memory Usage Above 98%** | Warning at 95%, critical at 98%. Notifies by email. |
 | Monitor: **Pod in CrashLoopBackOff** | Fires immediately on crash loop. Notifies by email. |
 | Dashboard: **Application Error Dashboard** | Error rate, top errors, log stream, HTTP 5xx, service map. |
 
@@ -299,19 +299,19 @@ Verify in Datadog:
 
   echo "\n===== 4. APACHE CHECK =====" && \
   APACHE_NODE=$(kubectl get pod -l app=apache -o jsonpath='{.items[0].spec.nodeName}') && \
-  AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent \
-    --field-selector spec.nodeName=$APACHE_NODE \
+  AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent -n datadog \
+  --field-selector spec.nodeName=$APACHE_NODE \
     -o jsonpath='{.items[0].metadata.name}') && \
   echo "Apache on node: $APACHE_NODE — Agent: $AGENT_POD" && \
-  kubectl exec -it $AGENT_POD -- agent check apache | grep -E "Service Checks|Metric Samples|Instance ID" && \
+  kubectl exec -it -n datadog $AGENT_POD -- agent check apache | grep -E "Service Checks|Metric Samples|Instance ID" && \
 
   echo "\n===== 5. RABBITMQ CHECK =====" && \
   RABBIT_NODE=$(kubectl get pod -l app=rabbitmq -o jsonpath='{.items[0].spec.nodeName}') && \
-  AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent \
-    --field-selector spec.nodeName=$RABBIT_NODE \
+  AGENT_POD=$(kubectl get pod -l app.kubernetes.io/component=agent -n datadog \
+  --field-selector spec.nodeName=$RABBIT_NODE \
     -o jsonpath='{.items[0].metadata.name}') && \
   echo "RabbitMQ on node: $RABBIT_NODE — Agent: $AGENT_POD" && \
-  kubectl exec -it $AGENT_POD -- agent check rabbitmq | grep -E "Service Checks|Metric Samples|Instance ID|Error" && \
+  kubectl exec -it -n datadog $AGENT_POD -- agent check rabbitmq | grep -E "Service Checks|Metric Samples|Instance ID|Error" && \
 
   echo "\n===== 6. JAVA APP LOGS =====" && \
   kubectl logs -l app=java-app -n apps --tail=5 && \
@@ -323,11 +323,11 @@ Verify in Datadog:
   kubectl logs -l app=dotnet-app -n apps --tail=5 && \
 
   echo "\n===== 9. AGENT APM + LOGS STATUS =====" && \
-  kubectl exec -it $(kubectl get pod -l app.kubernetes.io/component=agent -o name | head -1) \
+  kubectl exec -it $(kubectl get pod -l app.kubernetes.io/component=agent -n datadog -o name | head -1) \
     -- agent status | grep -E "APM Agent|Logs Agent|feature_apm_enabled|feature_auto_instrumentation|LogsSent" -A2 && \
 
   echo "\n===== 10. DATADOG AGENT CR STATUS =====" && \
-  kubectl get datadogagent datadog -o jsonpath='{.status}' | python3 -m json.tool
+  kubectl get datadogagent datadog -n datadog -o jsonpath='{.status}' | python3 -m json.tool
 
 } 2>&1 | tee deploy-validation-$(date +%Y%m%d-%H%M%S).txt
 ```
@@ -372,7 +372,7 @@ kind delete cluster --name appoena-lab
 ```
 kubernetes/
   kind-config.yaml          # Cluster: 1 control-plane + 3 workers, linux/arm64
-  datadog-agent.yaml        # DatadogAgent CR (v2alpha1) — agent 7.79.0, SSI, extraConfd log rules
+  datadog-agent.yaml        # DatadogAgent CR (v2alpha1) — agent 7.80.0, SSI, extraConfd log rules
   datadog-secret.yaml       # Template only — create secret via kubectl, never apply this file
 
 app/
