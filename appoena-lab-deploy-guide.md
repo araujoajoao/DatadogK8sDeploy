@@ -27,10 +27,6 @@ You also need:
 Set up your `.env` file with your credentials before running any deploy scripts:
 
 ```bash
-# Only copy the example if .env does not already exist
-if [[ ! -f .env ]]; then
-    cp .env.example .env
-fi
 # Edit .env with your real DATADOG_API_KEY and DATADOG_APP_KEY
 source .env
 ```

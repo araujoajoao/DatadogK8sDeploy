@@ -111,10 +111,6 @@ You also need a [Datadog account](https://app.datadoghq.com) with an API Key and
 Set up your `.env` file with your credentials:
 
 ```bash
-# Only copy the example if .env does not already exist
-if [[ ! -f .env ]]; then
-    cp .env.example .env
-fi
 # Edit .env with your real DATADOG_API_KEY and DATADOG_APP_KEY
 source .env
 ```
