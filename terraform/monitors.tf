@@ -19,7 +19,7 @@ resource "datadog_monitor" "pod_memory_high" {
   notify_no_data    = false
   renotify_interval = 30
 
-  tags = ["env:${var.env}", "team:observability", "project:appoena-lab"]
+  tags = ["env:${var.env}", "team:observability", "project:datadog-k8s-lab"]
 }
 
 resource "datadog_monitor" "pod_crash_loop_backoff" {
@@ -43,5 +43,5 @@ resource "datadog_monitor" "pod_crash_loop_backoff" {
   notify_no_data    = false
   renotify_interval = 15
 
-  tags = ["env:${var.env}", "team:observability", "project:appoena-lab"]
+  tags = ["env:${var.env}", "team:observability", "project:datadog-k8s-lab"]
 }

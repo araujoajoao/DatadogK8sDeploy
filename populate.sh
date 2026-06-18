@@ -22,7 +22,7 @@ JAVA_URL="http://${JAVA_IP}:8080"
 PY_URL="http://${PY_IP}:5000"
 DN_URL="http://${DN_IP}:80"
 
-echo "=== Appoena Lab — Traffic Generator ==="
+echo "=== Datadog K8s Lab — Traffic Generator ==="
 echo "  java-app   : $JAVA_URL"
 echo "  python-app : $PY_URL"
 echo "  dotnet-app : $DN_URL"
