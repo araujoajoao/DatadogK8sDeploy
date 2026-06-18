@@ -2,7 +2,7 @@ apiVersion: datadoghq.com/v2alpha1
 kind: DatadogAgent
 metadata:
   name: datadog
-  namespace: default
+  namespace: datadog
 spec:
   global:
     clusterName: "appoena-lab"
