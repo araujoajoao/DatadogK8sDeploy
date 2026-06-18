@@ -1,4 +1,4 @@
-# Appoena Observability Lab — Deploy Guide
+# Datadog Kubernetes Observability Lab — Deploy Guide
 
 Step-by-step commands to deploy the full stack from scratch.
 
@@ -42,7 +42,7 @@ sudo cloud-provider-kind
 ## Step 1 — Create the kind Cluster
 
 ```bash
-kind create cluster --config kubernetes/kind-config.yaml --name appoena-lab
+kind create cluster --config kubernetes/kind-config.yaml --name datadog-k8s-lab
 ```
 
 Verify nodes:
@@ -96,7 +96,7 @@ kubectl rollout status daemonset/datadog-agent -n datadog
 kubectl rollout status deployment/datadog-cluster-agent -n datadog
 ```
 
-Check Datadog UI: **Infrastructure → Kubernetes**, cluster `appoena-lab` — appears in 2–3 minutes.
+Check Datadog UI: **Infrastructure → Kubernetes**, cluster `datadog-k8s-lab` — appears in 2–3 minutes.
 
 ---
 
@@ -249,7 +249,7 @@ Optional deep validation script:
 
 | What to check | Where | Filter |
 |---|---|---|
-| Cluster infrastructure | Infrastructure → Kubernetes | `cluster:appoena-lab` |
+| Cluster infrastructure | Infrastructure → Kubernetes | `cluster:datadog-k8s-lab` |
 | APM distributed traces | APM → Traces | `env:mentoria` |
 | APM services | APM → Services | `env:mentoria` |
 | Logs (apps only) | Logs → Explorer | `service:(java-app OR python-app OR dotnet-app OR apache OR rabbitmq) env:mentoria` |
@@ -265,7 +265,7 @@ Optional deep validation script:
 
 ```bash
 ./scripts/destroy-datadog-resources.sh
-kind delete cluster --name appoena-lab
+kind delete cluster --name datadog-k8s-lab
 ```
 
 ---

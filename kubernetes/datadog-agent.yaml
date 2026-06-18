@@ -5,7 +5,7 @@ metadata:
   namespace: datadog
 spec:
   global:
-    clusterName: "appoena-lab"
+    clusterName: "datadog-k8s-lab"
     site: "datadoghq.com"
     credentials:
       apiSecret:
@@ -18,7 +18,7 @@ spec:
       tlsVerify: false
     tags:
       - "env:mentoria"
-      - "k8s_cluster:appoena-lab"
+      - "k8s_cluster:datadog-k8s-lab"
   features:
     logCollection:
       enabled: true

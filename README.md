@@ -1,4 +1,4 @@
-# Appoena Observability Lab
+# Datadog Kubernetes Observability Lab
 
 Kubernetes lab deploying 3 polyglot services on a local [kind](https://kind.sigs.k8s.io/) cluster with Datadog observability via **Single Step Instrumentation (SSI)** — zero manual instrumentation, just one agent CR.
 
@@ -36,7 +36,7 @@ Requests flow across 3 different languages with the same trace ID, visible in Da
 
 ## Quick Start
 
-For the full deployment commands, see [appoena-lab-deploy-guide.md](./appoena-lab-deploy-guide.md).
+For the full deployment commands, see [deploy-guide.md](./deploy-guide.md).
 
 ```bash
 # Start the LoadBalancer controller
@@ -44,17 +44,17 @@ sudo cloud-provider-kind
 
 # Create cluster
 cat kubernetes/kind-config.yaml
-kind create cluster --config kubernetes/kind-config.yaml --name appoena-lab
+kind create cluster --config kubernetes/kind-config.yaml --name datadog-k8s-lab
 
 # Deploy
-cat appoena-lab-deploy-guide.md  # follow step by step
+cat deploy-guide.md  # follow step by step
 ```
 
 ## Teardown
 
 ```bash
 ./scripts/destroy-datadog-resources.sh
-kind delete cluster --name appoena-lab
+kind delete cluster --name datadog-k8s-lab
 ```
 
 ## Project Structure

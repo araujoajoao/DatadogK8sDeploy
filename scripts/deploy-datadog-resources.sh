@@ -24,7 +24,7 @@ fi
 
 # ── Defaults ──────────────────────────────────────────────────────────────────
 
-NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-joao.araujo@appoena.io}"
+NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-notify@example.com}"
 ENV="${ENV:-mentoria}"
 
 DATADOG_API_KEY="${DATADOG_API_KEY:-}"
@@ -47,7 +47,7 @@ Required environment variables:
 
 Optional environment variables:
   NOTIFICATION_EMAIL    Email address for alert notifications
-                        (default: joao.araujo@appoena.io)
+                        (default: notify@example.com)
   ENV                   Environment name used as a tag and in resource names
                         (default: mentoria)
 EOF
@@ -148,7 +148,7 @@ cat > "$PAYLOAD_MEM_MONITOR" << EOF
   "type": "metric alert",
   "query": "max(last_5m):( max:kubernetes.memory.usage{env:${ENV}} by {pod_name,kube_namespace} / max:kubernetes.memory.limits{env:${ENV}} by {pod_name,kube_namespace} ) * 100 > 98",
   "message": "Pod {{pod_name.name}} in namespace {{kube_namespace.name}} is using more than 98% of its memory limit.\n\nCheck the pod logs and resource usage.\n\n@${NOTIFICATION_EMAIL}",
-  "tags": ["env:${ENV}", "team:observability", "project:appoena-lab"],
+  "tags": ["env:${ENV}", "team:observability", "project:datadog-k8s-lab"],
   "options": {
     "thresholds": {
       "critical": 98,
@@ -188,7 +188,7 @@ cat > "$PAYLOAD_CRASHLOOP_MONITOR" << EOF
   "type": "metric alert",
   "query": "max(last_10m):max:kubernetes_state.container.status_report.count.waiting{reason:crashloopbackoff,env:${ENV}} by {kube_namespace,kube_pod} >= 1",
   "message": "Pod {{kube_pod.name}} in namespace {{kube_namespace.name}} is in CrashLoopBackOff state.\n\nCheck pod events and logs:\nkubectl logs {{kube_pod.name}} -n {{kube_namespace.name}} --previous\n\n@${NOTIFICATION_EMAIL}",
-  "tags": ["env:${ENV}", "team:observability", "project:appoena-lab"],
+  "tags": ["env:${ENV}", "team:observability", "project:datadog-k8s-lab"],
   "options": {
     "thresholds": {
       "critical": 1
