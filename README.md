@@ -133,9 +133,12 @@ helm repo add datadog https://helm.datadoghq.com && helm repo update
 helm install datadog-operator datadog/datadog-operator --namespace default
 
 # 3. Create the Datadog secret from .env
-bash scripts/create-datadog-secret.sh
+source .env
+kubectl create secret generic datadog-secret \
+  --from-literal=api-key="$DATADOG_API_KEY" \
+  --from-literal=app-key="$DATADOG_APP_KEY" \
+  -n default
 
-> This script reads real keys from `.env`, creates the secret, and restarts agent pods automatically.
 > Do not apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
 
 # 4. Deploy the Datadog Agent
