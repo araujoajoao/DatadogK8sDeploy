@@ -108,10 +108,13 @@ brew install cloud-provider-kind   # required for LoadBalancer IPs on kind
 
 You also need a [Datadog account](https://app.datadoghq.com) with an API Key and App Key.
 
-Copy the example environment file and fill in your credentials:
+Set up your `.env` file with your credentials:
 
 ```bash
-cp .env.example .env
+# Only copy the example if .env does not already exist
+if [[ ! -f .env ]]; then
+    cp .env.example .env
+fi
 # Edit .env with your real DATADOG_API_KEY and DATADOG_APP_KEY
 source .env
 ```
@@ -129,12 +132,10 @@ kind create cluster --config kubernetes/kind-config.yaml --name appoena-lab
 helm repo add datadog https://helm.datadoghq.com && helm repo update
 helm install datadog-operator datadog/datadog-operator --namespace default
 
-# 3. Create the Datadog secret
-kubectl create secret generic datadog-secret \
-  --from-literal=api-key=YOUR_API_KEY \
-  --from-literal=app-key=YOUR_APP_KEY \
-  --namespace default
+# 3. Create the Datadog secret from .env
+bash scripts/create-datadog-secret.sh
 
+> This script reads real keys from `.env`, creates the secret, and restarts agent pods automatically.
 > Do not apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
 
 # 4. Deploy the Datadog Agent

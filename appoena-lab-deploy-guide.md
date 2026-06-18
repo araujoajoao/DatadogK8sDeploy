@@ -24,10 +24,13 @@ You also need:
 - **API Key**: Organization Settings → API Keys
 - **App Key**: Organization Settings → Application Keys
 
-Copy the example environment file and fill in your credentials before running any deploy scripts:
+Set up your `.env` file with your credentials before running any deploy scripts:
 
 ```bash
-cp .env.example .env
+# Only copy the example if .env does not already exist
+if [[ ! -f .env ]]; then
+    cp .env.example .env
+fi
 # Edit .env with your real DATADOG_API_KEY and DATADOG_APP_KEY
 source .env
 ```
@@ -88,17 +91,15 @@ kubectl rollout status deployment/datadog-operator -n default
 
 ---
 
-## Step 3 — Create the Datadog Secret
+## Step 3 — Create the Datadog Secret from .env
 
-Replace with your actual keys:
+Run the helper script (reads real keys from `.env`):
 
 ```bash
-kubectl create secret generic datadog-secret \
-  --from-literal=api-key=YOUR_API_KEY \
-  --from-literal=app-key=YOUR_APP_KEY \
-  --namespace default
+bash scripts/create-datadog-secret.sh
 ```
 
+> This script reads real keys from `.env`, creates the secret, and restarts agent pods automatically.
 > Do **not** apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
 
 ---
