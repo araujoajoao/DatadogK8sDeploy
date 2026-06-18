@@ -126,14 +126,14 @@ kind create cluster --config kubernetes/kind-config.yaml --name appoena-lab
 
 # 2. Install the Datadog Operator
 helm repo add datadog https://helm.datadoghq.com && helm repo update
-helm install datadog-operator datadog/datadog-operator --namespace default
+helm install datadog-operator datadog/datadog-operator --namespace datadog --create-namespace
 
 # 3. Create the Datadog secret from .env
 source .env
 kubectl create secret generic datadog-secret \
   --from-literal=api-key="$DATADOG_API_KEY" \
   --from-literal=app-key="$DATADOG_APP_KEY" \
-  -n default
+  -n datadog
 
 > Do not apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
 

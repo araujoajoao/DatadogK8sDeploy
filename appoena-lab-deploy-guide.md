@@ -76,13 +76,13 @@ appoena-lab-worker3         Ready    <none>          1m
 ```bash
 helm repo add datadog https://helm.datadoghq.com
 helm repo update
-helm install datadog-operator datadog/datadog-operator --namespace default
+helm install datadog-operator datadog/datadog-operator --namespace datadog --create-namespace
 ```
 
 Wait for the operator to be ready:
 
 ```bash
-kubectl rollout status deployment/datadog-operator -n default
+kubectl rollout status deployment/datadog-operator -n datadog
 ```
 
 ---
@@ -96,7 +96,7 @@ source .env
 kubectl create secret generic datadog-secret \
   --from-literal=api-key="$DATADOG_API_KEY" \
   --from-literal=app-key="$DATADOG_APP_KEY" \
-  -n default
+  -n datadog
 ```
 
 > Do **not** apply `kubernetes/datadog-secret.yaml` directly — it contains placeholder values only.
@@ -112,8 +112,8 @@ kubectl apply -f kubernetes/datadog-agent.yaml
 Wait for the DaemonSet and Cluster Agent:
 
 ```bash
-kubectl rollout status daemonset/datadog-agent -n default
-kubectl rollout status deployment/datadog-cluster-agent -n default
+kubectl rollout status daemonset/datadog-agent -n datadog
+kubectl rollout status deployment/datadog-cluster-agent -n datadog
 ```
 
 Expected: one `datadog-agent-*` pod per node (4 total) + one `datadog-cluster-agent-*` pod.
