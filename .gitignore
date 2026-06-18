@@ -2,3 +2,6 @@
 .env
 kubernetes/datadog-secret.yaml
 deploy-validation-*.txt
+scripts/.datadog-resource-ids.json
+.kimchi/
+*.deprecated
