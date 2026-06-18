@@ -1,32 +1,32 @@
 # Appoena Observability Lab
 
-Kubernetes lab deploying Java, Python and .NET apps on a local [kind](https://kind.sigs.k8s.io/) cluster with Datadog observability via **Single Step Instrumentation (SSI)** — zero manual instrumentation, just one agent CR.
+Kubernetes lab deploying 3 polyglot services on a local [kind](https://kind.sigs.k8s.io/) cluster with Datadog observability via **Single Step Instrumentation (SSI)** — zero manual instrumentation, just one agent CR.
 
 ## What it covers
 
 - Local Kubernetes cluster with [kind](https://kind.sigs.k8s.io/)
 - Datadog Agent + Cluster Agent managed by the Datadog Operator
-- APM distributed tracing across Java → Python → .NET
+- APM distributed tracing across a 3-tier polyglot service chain
 - Log-trace correlation with `dd.trace_id` propagation
-- Infrastructure metrics for Apache and RabbitMQ
+- Infrastructure metrics for proxy and messaging workloads
 - Datadog monitors and dashboard provisioned via shell script
 
 ## Architecture
 
 - **Datadog resources** run in the `datadog` namespace
-- **Infrastructure** (Apache, RabbitMQ) runs in `default`
-- **Apps** (Java, Python, .NET) run in `apps` namespace and are auto-instrumented by SSI
+- **Infrastructure** (proxy, message broker) runs in `default`
+- **Services** (frontend, middleware, backend) run in `apps` namespace and are auto-instrumented by SSI
 - APM is disabled for `kube-system` and `default`
 
 ## Distributed Trace Flow
 
 ```
-java-app /greeting
-  └── python-app /api/dotnet
-        └── dotnet-app /weatherforecast
+frontend-service /greeting
+  └── middleware-service /api/backend
+        └── backend-service /data
 ```
 
-Requests flow across languages with the same trace ID, visible in Datadog APM.
+Requests flow across 3 different languages with the same trace ID, visible in Datadog APM.
 
 ## Prerequisites
 
@@ -60,8 +60,8 @@ kind delete cluster --name appoena-lab
 ## Project Structure
 
 - `kubernetes/` — cluster config and Datadog Agent CR
-- `app/` — Apache and RabbitMQ workloads
-- `builds/metrics/` — Java, Python and .NET apps with Services
-- `configmap/` — logging and tracing ConfigMaps
+- `app/` — infrastructure workloads (proxy, message broker)
+- `builds/metrics/` — polyglot services (frontend, middleware, backend) plus Services
+- `configmap/` — logging and tracing patches
 - `scripts/` — deploy / destroy Datadog monitors and dashboard
 - `terraform/` — legacy IaC alternative
