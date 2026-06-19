@@ -63,5 +63,5 @@ kind delete cluster --name datadog-k8s-lab
 - `app/` — infrastructure workloads (proxy, message broker)
 - `builds/metrics/` — polyglot services (frontend, middleware, backend) plus Services
 - `configmap/` — logging and tracing patches
-- `scripts/` — deploy / destroy Datadog monitors and dashboard
+- `deprecated/shell-scripts/` — legacy shell scripts for deploy / destroy (deprecated; use Terraform)
 - `terraform/` — Datadog monitors and dashboard via Terraform

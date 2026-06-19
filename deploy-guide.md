@@ -227,7 +227,7 @@ Verify:
 - **Monitors → Manage Monitors** — search `[k8s-lab]`
 - **Dashboards → Dashboard List** — search `Application Error Dashboard`**
 
-> **Legacy shell script method:** `./scripts/deploy-datadog-resources.sh` exists but is deprecated. Use Terraform above instead.
+> **Legacy shell script method:** `./deprecated/shell-scripts/deploy-datadog-resources.sh` exists but is deprecated. Use Terraform above instead.
 
 ---
 
