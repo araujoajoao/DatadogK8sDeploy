@@ -16,9 +16,9 @@ kind version && kubectl version --client && helm version && terraform version
 ```
 
 You need:
-- A Datadog account at [app.datadoghq.com](https://app.datadoghq.com)
-- API Key and App Key from **Organization Settings**
-- A `.env` file with real credentials (copy from `.env.example`)
+- 🐶 A Datadog account at [app.datadoghq.com](https://app.datadoghq.com)
+- 🔑 API Key and App Key from **Organization Settings**
+- 📄 A `.env` file with real credentials (copy from `.env.example`)
 
 Set up `.env` before running any scripts:
 
@@ -224,8 +224,8 @@ Creates (via Terraform):
 | Dashboard: **Application Error Dashboard** | Error rate, top errors, log stream, HTTP 5xx, service map. |
 
 Verify:
-- **Monitors → Manage Monitors** — search `[k8s-lab]`
-- **Dashboards → Dashboard List** — search `Application Error Dashboard`**
+- 🔔 **Monitors → Manage Monitors** — search `[k8s-lab]`
+- 📊 **Dashboards → Dashboard List** — search `Application Error Dashboard`**
 
 > **Legacy shell script method:** `./deprecated/shell-scripts/deploy-datadog-resources.sh` exists but is deprecated. Use Terraform above instead.
 
