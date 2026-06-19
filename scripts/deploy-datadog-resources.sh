@@ -147,7 +147,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ── Monitor 1: Pod Memory Usage Above 75% ─────────────────────────────────────
+# ── Monitor 1: Pod Memory Usage Above 98% ─────────────────────────────────────
 # Use unquoted EOF so bash expands ${ENV} and ${NOTIFICATION_EMAIL} directly
 
 cat > "$PAYLOAD_MEM_MONITOR" << EOF
