@@ -9,7 +9,7 @@ Kubernetes lab deploying 3 polyglot services on a local [kind](https://kind.sigs
 - APM distributed tracing across a 3-tier polyglot service chain
 - Log-trace correlation with `dd.trace_id` propagation
 - Infrastructure metrics for proxy and messaging workloads
-- Datadog monitors and dashboard provisioned via shell script
+- Datadog monitors and dashboard provisioned via Terraform
 
 ## Architecture
 
@@ -53,7 +53,7 @@ cat deploy-guide.md  # follow step by step
 ## Teardown
 
 ```bash
-./scripts/destroy-datadog-resources.sh
+cd terraform && terraform destroy
 kind delete cluster --name datadog-k8s-lab
 ```
 
@@ -64,4 +64,4 @@ kind delete cluster --name datadog-k8s-lab
 - `builds/metrics/` — polyglot services (frontend, middleware, backend) plus Services
 - `configmap/` — logging and tracing patches
 - `scripts/` — deploy / destroy Datadog monitors and dashboard
-- `terraform/` — legacy IaC alternative
+- `terraform/` — Datadog monitors and dashboard via Terraform

@@ -1,5 +1,5 @@
 resource "datadog_dashboard" "error_dashboard" {
-  title       = "[${var.env}] Application Error Dashboard"
+  title       = "[${local.env}] Application Error Dashboard"
   description = "Identify errors across services using logs, metrics, and traces"
   layout_type = "ordered"
 
@@ -9,7 +9,7 @@ resource "datadog_dashboard" "error_dashboard" {
       show_legend = true
 
       request {
-        q            = "sum:trace.http.request.errors{env:${var.env}} by {service}.as_rate()"
+        q            = "sum:trace.http.request.errors{env:${local.env}} by {service}.as_rate()"
         display_type = "line"
         style {
           palette    = "warm"
@@ -36,21 +36,19 @@ resource "datadog_dashboard" "error_dashboard" {
         log_query {
           index = "*"
 
-          search {
-            query = "status:error env:${var.env}"
-          }
+          search_query = "status:error env:${local.env}"
 
           group_by {
             facet = "service"
             limit = 10
 
-            sort {
+            sort_query {
               aggregation = "count"
               order       = "desc"
             }
           }
 
-          compute {
+          compute_query {
             aggregation = "count"
           }
         }
@@ -60,10 +58,10 @@ resource "datadog_dashboard" "error_dashboard" {
 
   widget {
     log_stream_definition {
-      title   = "Recent Error Logs"
-      query   = "status:error env:${var.env}"
-      indexes = ["*"]
-      columns = ["core_host", "core_service", "core_status", "core_message"]
+      title               = "Recent Error Logs"
+      query               = "status:error env:${local.env}"
+      indexes             = ["*"]
+      columns             = ["core_host", "core_service", "core_status", "core_message"]
       show_date_column    = true
       show_message_column = true
       message_display     = "expanded-md"
@@ -80,7 +78,7 @@ resource "datadog_dashboard" "error_dashboard" {
       title = "HTTP 5xx Errors vs Total Requests"
 
       request {
-        q            = "sum:trace.http.request.errors{env:${var.env}} by {service}.as_rate()"
+        q            = "sum:trace.http.request.errors{env:${local.env}} by {service}.as_rate()"
         display_type = "bars"
         style {
           palette = "warm"
@@ -88,7 +86,7 @@ resource "datadog_dashboard" "error_dashboard" {
       }
 
       request {
-        q            = "sum:trace.http.request.hits{env:${var.env}} by {service}.as_rate()"
+        q            = "sum:trace.http.request.hits{env:${local.env}} by {service}.as_rate()"
         display_type = "line"
         style {
           palette = "cool"
@@ -98,9 +96,10 @@ resource "datadog_dashboard" "error_dashboard" {
   }
 
   widget {
-    service_map_definition {
+    servicemap_definition {
       title   = "Service Map"
-      filters = ["env:${var.env}"]
+      service = ""
+      filters = ["env:${local.env}"]
     }
   }
 }

@@ -198,12 +198,24 @@ curl http://$(kubectl get svc dotnet-app -n apps -o jsonpath='{.status.loadBalan
 
 ## Step 9 — Deploy Monitors and Dashboard
 
+First, pass your Datadog credentials to Terraform via environment variables:
+
 ```bash
-# Shell script (recommended, no Terraform)
-./scripts/deploy-datadog-resources.sh
+source .env
+export TF_VAR_datadog_api_key="$DATADOG_API_KEY"
+export TF_VAR_datadog_app_key="$DATADOG_APP_KEY"
 ```
 
-Creates:
+Then initialize and apply the Terraform configuration:
+
+```bash
+cd terraform
+terraform init
+terraform plan
+terraform apply
+```
+
+Creates (via Terraform):
 
 | Resource | Description |
 |---|---|
@@ -213,7 +225,9 @@ Creates:
 
 Verify:
 - **Monitors → Manage Monitors** — search `[mentoria]`
-- **Dashboards → Dashboard List** — search `Application Error Dashboard`
+- **Dashboards → Dashboard List** — search `Application Error Dashboard`**
+
+> **Legacy shell script method:** `./scripts/deploy-datadog-resources.sh` exists but is deprecated. Use Terraform above instead.
 
 ---
 
@@ -264,7 +278,8 @@ Optional deep validation script:
 ## Teardown
 
 ```bash
-./scripts/destroy-datadog-resources.sh
+cd terraform
+terraform destroy
 kind delete cluster --name datadog-k8s-lab
 ```
 
