@@ -19,5 +19,5 @@ variable "notification_email" {
 variable "env" {
   description = "Environment name used in resource names, tags, and metric queries."
   type        = string
-  default     = "mentoria"
+  default     = "k8s-lab"
 }

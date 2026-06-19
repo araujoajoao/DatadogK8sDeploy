@@ -7,7 +7,7 @@ kubeadmConfigPatches:
     certSANs:
     - "127.0.0.1"
     - "localhost"
-    - "192.168.15.25"   # Mac LAN IP — update if your IP changes
+    - "192.168.x.x"     # Your Mac LAN IP — update with your actual IP
 nodes:
   - role: control-plane
   - role: worker

@@ -5,7 +5,7 @@ metadata:
   namespace: apps
   labels:
     app: java-app
-    tags.datadoghq.com/env: "mentoria"
+    tags.datadoghq.com/env: "k8s-lab"
     tags.datadoghq.com/service: "java-app"
     tags.datadoghq.com/version: "latest"
 spec:
@@ -17,7 +17,7 @@ spec:
     metadata:
       labels:
         app: java-app
-        tags.datadoghq.com/env: "mentoria"
+        tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "java-app"
         tags.datadoghq.com/version: "latest"
       annotations:
@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: java-app
-        image: araujoajoao/java-app:latest
+        image: YOUR_DOCKERHUB_USERNAME/java-app:latest
         ports:
         - containerPort: 8080
         env:
@@ -42,7 +42,7 @@ spec:
           - name: DD_SERVICE
             value: "java-app"
           - name: DD_ENV
-            value: "mentoria"
+            value: "k8s-lab"
           - name: DD_VERSION
             value: "latest"
           - name: DD_JVM_METRICS_ENABLED

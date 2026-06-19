@@ -35,7 +35,7 @@ fi
 
 DATADOG_API_KEY="${DATADOG_API_KEY:-}"
 DATADOG_APP_KEY="${DATADOG_APP_KEY:-}"
-ENV="${ENV:-mentoria}"
+ENV="${ENV:-k8s-lab}"
 
 STATE_FILE="$(dirname "$0")/.datadog-resource-ids.json"
 API_BASE="https://api.datadoghq.com/api/v1"

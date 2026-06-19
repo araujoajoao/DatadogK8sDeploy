@@ -33,7 +33,7 @@ fi
 # ── Defaults ──────────────────────────────────────────────────────────────────
 
 NOTIFICATION_EMAIL="${NOTIFICATION_EMAIL:-notify@example.com}"
-ENV="${ENV:-mentoria}"
+ENV="${ENV:-k8s-lab}"
 
 DATADOG_API_KEY="${DATADOG_API_KEY:-}"
 DATADOG_APP_KEY="${DATADOG_APP_KEY:-}"
@@ -57,7 +57,7 @@ Optional environment variables:
   NOTIFICATION_EMAIL    Email address for alert notifications
                         (default: notify@example.com)
   ENV                   Environment name used as a tag and in resource names
-                        (default: mentoria)
+                        (default: k8s-lab)
 EOF
     exit 1
 }
