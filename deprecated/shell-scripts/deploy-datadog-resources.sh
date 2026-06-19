@@ -20,6 +20,7 @@ set +o history 2>/dev/null || true
 # Guard against accidental sourcing
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     echo "[ERROR] Do not source this script. Run: bash $0" >&2
+    # shellcheck disable=SC2317
     return 1 2>/dev/null || exit 1
 fi
 
@@ -136,7 +137,6 @@ log "Environment               : ${ENV}"
 
 # ── Monitor payload files ─────────────────────────────────────────────────────
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TMPDIR="${TMPDIR:-/tmp}"
 PAYLOAD_MEM_MONITOR="${TMPDIR}/dd-payload-monitor-memory-$$.json"
 PAYLOAD_CRASHLOOP_MONITOR="${TMPDIR}/dd-payload-monitor-crashloop-$$.json"

@@ -21,6 +21,7 @@ set +o history 2>/dev/null || true
 # Guard against accidental sourcing
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     echo "[ERROR] Do not source this script. Run: bash $0" >&2
+    # shellcheck disable=SC2317
     return 1 2>/dev/null || exit 1
 fi
 
@@ -107,12 +108,14 @@ if [[ ! -f "$STATE_FILE" ]]; then
 
     # Search for monitors by name
     log "Searching for monitors matching [${ENV}] ..."
-    local mem_response crash_response
+    mem_response=""
+    crash_response=""
     mem_response=$(curl -s -G -H "${HEADER_API_KEY}" -H "${HEADER_APP_KEY}" \
         "${API_BASE}/monitor" \
         --data-urlencode "name=[${ENV}] Pod Memory Usage Above 98%" 2>&1) || true
 
-    local mem_ids crashloop_ids
+    mem_ids=""
+    crashloop_ids=""
     mem_ids=$(printf '%s' "$mem_response" \
         | jq -r --arg env "$ENV" '.[] | select(.name == "[" + $env + "] Pod Memory Usage Above 98%") | .id' 2>/dev/null || true)
 
@@ -122,15 +125,15 @@ if [[ ! -f "$STATE_FILE" ]]; then
     crashloop_ids=$(printf '%s' "$crash_response" \
         | jq -r --arg env "$ENV" '.[] | select(.name == "[" + $env + "] Pod in CrashLoopBackOff") | .id' 2>/dev/null || true)
 
-    local monitor_ids
+    monitor_ids=""
     monitor_ids=$(printf '%s\n%s' "$mem_ids" "$crashloop_ids" | grep -v '^$')
 
     # Search for dashboard by title
     log "Searching for dashboards matching [${ENV}] Application Error Dashboard ..."
-    local dash_response
+    dash_response=""
     dash_response=$(curl -s -H "${HEADER_API_KEY}" -H "${HEADER_APP_KEY}" \
         "${API_BASE}/dashboard" 2>&1) || true
-    local dashboard_id
+    dashboard_id=""
     dashboard_id=$(printf '%s' "$dash_response" \
         | jq -r --arg env "$ENV" '.dashboards[] | select(.title == "[" + $env + "] Application Error Dashboard") | .id' 2>/dev/null || true)
 
