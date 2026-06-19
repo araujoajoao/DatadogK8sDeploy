@@ -13,12 +13,13 @@
 
 **Observability** means understanding what your software is doing by looking at its **traces**, **logs**, and **metrics** — instead of guessing.
 
-Think of it like a hospital monitoring a patient:
-- 📊 **Metrics** = heart rate, blood pressure (numbers over time)
-- 📝 **Logs** = nurse notes (text records of events)
-- 🔗 **Traces** = following a single blood cell's journey through the body (tracking one request across many services)
+Modern applications are made of many small services talking to each other. When something breaks, you need three types of signals to figure out why:
 
-This lab teaches you how to set up all three on a local cluster, **with zero prior experience**.
+- 📊 **Metrics** — numbers measured over time (CPU %, memory usage, request count, error rate)
+- 📝 **Logs** — timestamped text records of what happened inside each service (`ERROR: database connection failed`)
+- 🔗 **Traces** — a complete record of one request's journey as it hops through multiple services, showing exactly where time was spent and which service failed
+
+This lab teaches you how to collect all three automatically on a local cluster, **with zero prior experience**.
 
 ### What You Will Learn
 
