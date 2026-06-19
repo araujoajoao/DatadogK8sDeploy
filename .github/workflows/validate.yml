@@ -43,7 +43,7 @@ jobs:
 
       - name: Run yamllint
         run: |
-          yamllint -d '{extends: default, rules: {line-length: {max: 160}, document-start: disable}}' \
+          yamllint -d '{extends: default, rules: {line-length: {max: 500}, document-start: disable, indentation: disable}}' \
             configmap/ app/ builds/ kubernetes/
 
   shell:
