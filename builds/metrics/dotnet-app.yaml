@@ -5,7 +5,7 @@ metadata:
   namespace: apps
   labels:
     app: dotnet-app
-    tags.datadoghq.com/env: "mentoria"
+    tags.datadoghq.com/env: "k8s-lab"
     tags.datadoghq.com/service: "dotnet-app"
     tags.datadoghq.com/version: "latest"
 spec:
@@ -17,7 +17,7 @@ spec:
     metadata:
       labels:
         app: dotnet-app
-        tags.datadoghq.com/env: "mentoria"
+        tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "dotnet-app"
         tags.datadoghq.com/version: "latest"
       annotations:
@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: dotnet-app
-        image: araujoajoao/dotnet-app:latest
+        image: YOUR_DOCKERHUB_USERNAME/dotnet-app:latest
         ports:
         - containerPort: 80
         env:
@@ -40,7 +40,7 @@ spec:
           - name: DD_SERVICE
             value: "dotnet-app"
           - name: DD_ENV
-            value: "mentoria"
+            value: "k8s-lab"
           - name: DD_VERSION
             value: "latest"
           - name: DD_RUNTIME_METRICS_ENABLED

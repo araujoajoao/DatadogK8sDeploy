@@ -224,7 +224,7 @@ Creates (via Terraform):
 | Dashboard: **Application Error Dashboard** | Error rate, top errors, log stream, HTTP 5xx, service map. |
 
 Verify:
-- **Monitors → Manage Monitors** — search `[mentoria]`
+- **Monitors → Manage Monitors** — search `[k8s-lab]`
 - **Dashboards → Dashboard List** — search `Application Error Dashboard`**
 
 > **Legacy shell script method:** `./scripts/deploy-datadog-resources.sh` exists but is deprecated. Use Terraform above instead.
@@ -264,13 +264,13 @@ Optional deep validation script:
 | What to check | Where | Filter |
 |---|---|---|
 | Cluster infrastructure | Infrastructure → Kubernetes | `cluster:datadog-k8s-lab` |
-| APM distributed traces | APM → Traces | `env:mentoria` |
-| APM services | APM → Services | `env:mentoria` |
-| Logs (apps only) | Logs → Explorer | `service:(java-app OR python-app OR dotnet-app OR apache OR rabbitmq) env:mentoria` |
+| APM distributed traces | APM → Traces | `env:k8s-lab` |
+| APM services | APM → Services | `env:k8s-lab` |
+| Logs (apps only) | Logs → Explorer | `service:(java-app OR python-app OR dotnet-app OR apache OR rabbitmq) env:k8s-lab` |
 | Apache metrics | Metrics → Explorer | `apache.*` |
 | RabbitMQ metrics | Metrics → Explorer | `rabbitmq.*` |
 | JVM metrics | Metrics → Explorer | `jvm.*` |
-| Monitors | Monitors → Manage | `[mentoria]` |
+| Monitors | Monitors → Manage | `[k8s-lab]` |
 | Dashboard | Dashboards → List | `Application Error Dashboard` |
 
 ---

@@ -5,7 +5,7 @@ metadata:
   namespace: apps
   labels:
     app: python-app
-    tags.datadoghq.com/env: "mentoria"
+    tags.datadoghq.com/env: "k8s-lab"
     tags.datadoghq.com/service: "python-app"
     tags.datadoghq.com/version: "latest"
 spec:
@@ -17,7 +17,7 @@ spec:
     metadata:
       labels:
         app: python-app
-        tags.datadoghq.com/env: "mentoria"
+        tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "python-app"
         tags.datadoghq.com/version: "latest"
       annotations:
@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: python-app
-        image: araujoajoao/python-app:py311
+        image: YOUR_DOCKERHUB_USERNAME/python-app:py311
         command: ["python", "/startup/entrypoint.py"]
         ports:
         - containerPort: 5000
@@ -41,7 +41,7 @@ spec:
           - name: DD_SERVICE
             value: "python-app"
           - name: DD_ENV
-            value: "mentoria"
+            value: "k8s-lab"
           - name: DD_VERSION
             value: "latest"
           - name: DD_RUNTIME_METRICS_ENABLED

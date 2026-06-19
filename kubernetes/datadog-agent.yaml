@@ -17,7 +17,7 @@ spec:
     kubelet:
       tlsVerify: false
     tags:
-      - "env:mentoria"
+      - "env:k8s-lab"
       - "k8s_cluster:datadog-k8s-lab"
   features:
     logCollection:
@@ -69,7 +69,7 @@ spec:
           operator: Exists
       env:
         - name: DD_HOSTNAME
-          value: "lab-mentoria"
+          value: "lab-k8s-lab"
         - name: DD_CONTAINER_EXCLUDE
           value: "name:etcd name:kube-scheduler name:kube-apiserver name:kube-controller-manager"
         - name: DD_KUBERNETES_KUBELET_HOST
@@ -93,7 +93,7 @@ spec:
         - name: DD_CONTAINER_EXCLUDE_LOGS
           value: "kube_namespace:kube-system kube_namespace:local-path-storage name:kindnetd"
         - name: DD_ENV
-          value: "mentoria"
+          value: "k8s-lab"
         - name: DD_DATABASE_MONITORING_ENABLED
           value: "true"
         - name: DD_IGNORE_AUTOCONF

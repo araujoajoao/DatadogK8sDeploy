@@ -7,5 +7,5 @@ datadog_app_key = "YOUR_APP_KEY"
 # Notification email for alerts (optional - defaults to notify@example.com)
 # notification_email = "you@example.com"
 
-# Environment name used in resource names and tags (optional - defaults to "mentoria")
-# env = "mentoria"
+# Environment name used in resource names and tags (optional - defaults to "k8s-lab")
+# env = "k8s-lab"
