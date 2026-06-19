@@ -1,4 +1,4 @@
-# ☸️🐶 Datadog Kubernetes Observability Lab
+# Datadog Kubernetes Observability Lab
 
 [![Validate](https://github.com/araujoajoao/DatadogK8sDeploy/actions/workflows/validate.yml/badge.svg)](https://github.com/araujoajoao/DatadogK8sDeploy/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
