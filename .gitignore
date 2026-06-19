@@ -5,3 +5,6 @@ deploy-validation-*.txt
 scripts/.datadog-resource-ids.json
 .kimchi/
 *.deprecated
+
+# Terraform provider cache
+.terraform/

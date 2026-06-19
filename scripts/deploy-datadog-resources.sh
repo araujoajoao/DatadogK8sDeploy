@@ -4,6 +4,14 @@
 # All configuration is read from environment variables.
 #
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  DEPRECATED
+#  ─────────────────────────────────────────────────────────────────────────────
+#  This script is kept as a fallback. For new deployments, use Terraform:
+#    cd terraform && terraform init && terraform plan && terraform apply
+#  ─────────────────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+
 set -euo pipefail
 
 # Prevent this script's commands from entering interactive bash history

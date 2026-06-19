@@ -5,6 +5,14 @@
 # If the state file is missing, falls back to searching by name.
 #
 
+# ═══════════════════════════════════════════════════════════════════════════════
+#  DEPRECATED
+#  ─────────────────────────────────────────────────────────────────────────────
+#  This script is kept as a fallback. For new deployments, use Terraform:
+#    cd terraform && terraform init && terraform plan && terraform apply
+#  ─────────────────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+
 set -euo pipefail
 
 # Prevent this script's commands from entering interactive bash history
@@ -102,11 +110,11 @@ if [[ ! -f "$STATE_FILE" ]]; then
     local mem_response crash_response
     mem_response=$(curl -s -G -H "${HEADER_API_KEY}" -H "${HEADER_APP_KEY}" \
         "${API_BASE}/monitor" \
-        --data-urlencode "name=[${ENV}] Pod Memory Usage Above 75%" 2>&1) || true
+        --data-urlencode "name=[${ENV}] Pod Memory Usage Above 98%" 2>&1) || true
 
     local mem_ids crashloop_ids
     mem_ids=$(printf '%s' "$mem_response" \
-        | jq -r --arg env "$ENV" '.[] | select(.name == "[" + $env + "] Pod Memory Usage Above 75%") | .id' 2>/dev/null || true)
+        | jq -r --arg env "$ENV" '.[] | select(.name == "[" + $env + "] Pod Memory Usage Above 98%") | .id' 2>/dev/null || true)
 
     crash_response=$(curl -s -G -H "${HEADER_API_KEY}" -H "${HEADER_APP_KEY}" \
         "${API_BASE}/monitor" \
