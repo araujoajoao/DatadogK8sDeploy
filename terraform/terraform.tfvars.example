@@ -1,11 +1,14 @@
 # Datadog API Key (required)
-datadog_api_key = "YOUR_API_KEY"
+api_key = "YOUR-API-KEY"
 
 # Datadog Application Key (required)
-datadog_app_key = "YOUR_APP_KEY"
+app_key = "YOUR-APP-KEY"
+
+# Datagod Site
+api_url = "https://api.datadoghq.com/"
 
 # Notification email for alerts (optional - defaults to notify@example.com)
-# notification_email = "you@example.com"
+notification_email = "YOUR-EMAIL"
 
 # Environment name used in resource names and tags (optional - defaults to "k8s-lab")
-# env = "k8s-lab"
+env = "k8s-lab"
