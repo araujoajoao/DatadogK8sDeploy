@@ -20,4 +20,23 @@ variable "env" {
   description = "Environment name used in resource names, tags, and metric queries."
   type        = string
   default     = "k8s-lab"
+  
+}
+
+variable "api_url" {
+  description = "Datadog API URL."
+  type        = string
+  default     = "https://api.datadoghq.com/"
+}
+
+variable "api_key" {
+  description = "Datadog API key."
+  type        = string
+  sensitive   = true
+}
+
+variable "app_key" {
+  description = "Datadog Application key."
+  type        = string
+  sensitive   = true
 }
