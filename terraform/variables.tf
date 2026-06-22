@@ -20,7 +20,7 @@ variable "env" {
   description = "Environment name used in resource names, tags, and metric queries."
   type        = string
   default     = "k8s-lab"
-  
+
 }
 
 variable "api_url" {
