@@ -116,7 +116,10 @@ kubectl create secret generic datadog-secret \
   --from-literal=api-key="$DATADOG_API_KEY" \
   --from-literal=app-key="$DATADOG_APP_KEY" \
   -n datadog
-kubectl apply -f kubernetes/datadog-agent.yaml
+kubectl apply -f kubernetes/datadog-confd-configmap.yaml
+helm install datadog-agent datadog/datadog \
+  -f kubernetes/datadog-values.yaml \
+  -n datadog --create-namespace
 kubectl apply -f configmap/ -f app/ -f builds/metrics/
 cd terraform && terraform init && terraform apply
 cd .. && ./populate.sh
@@ -148,7 +151,7 @@ Also:
 
 | Folder | What's Inside | For Beginners |
 |---|---|---|
-| `kubernetes/` | Cluster config + Datadog Agent YAML | The "operating system" of your cluster and the Datadog watchman |
+| `kubernetes/` | Cluster config + Datadog Helm values | The "operating system" of your cluster and the Datadog watchman |
 | `app/` | Apache + RabbitMQ deployments | The shared infrastructure your apps depend on |
 | `builds/metrics/` | Java, Python, .NET apps + Services | The actual applications you'll trace and monitor |
 | `configmap/` | Logging patches and config | Tweaks to make logs and traces work together |
