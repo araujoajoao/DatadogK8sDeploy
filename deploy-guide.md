@@ -65,22 +65,17 @@ kubectl get nodes
 
 ---
 
-## Step 2 — Install the Datadog Operator
+## Step 2 — Add the Datadog Helm Repository
 
-> **What this does:** The Datadog Operator is a Kubernetes controller that automatically installs and manages the Datadog Agent on every node. Think of it as "the Datadog sysadmin for your cluster."
+> **What this does:** The Datadog Helm chart is the official way to install the Datadog Agent on Kubernetes. It replaces the Operator and gives you all configuration in a single `values.yaml` file.
 >
-> 💡 **Beginner tip:** An **Operator** is a Kubernetes app that manages other apps. We use one because it handles all the hard Datadog setup automatically.
+> 💡 **Beginner tip:** Helm is like `apt` or `brew` for Kubernetes — it installs and manages apps using pre-packaged "charts."
+
+Add the Datadog Helm repository and update it:
 
 ```bash
 helm repo add datadog https://helm.datadoghq.com
 helm repo update
-helm install datadog-operator datadog/datadog-operator --namespace datadog --create-namespace
-```
-
-Wait for rollout (this means "wait until the Operator pod is running"):
-
-```bash
-kubectl rollout status deployment/datadog-operator -n datadog
 ```
 
 ---
@@ -109,15 +104,25 @@ kubectl create secret generic datadog-secret \
 >
 > 💡 **Beginner tip:** The Agent has two parts: (1) a **DaemonSet** that runs on every node, and (2) a **Cluster Agent** that watches the whole cluster.
 
+First, apply the ConfigMap that holds custom log processing rules:
+
 ```bash
-kubectl apply -f kubernetes/datadog-agent.yaml
+kubectl apply -f kubernetes/datadog-confd-configmap.yaml
+```
+
+Then install the Agent using Helm:
+
+```bash
+helm install datadog-agent datadog/datadog \
+  -f kubernetes/datadog-values.yaml \
+  -n datadog --create-namespace
 ```
 
 Wait for rollouts (this means "wait until the pods are ready"):
 
 ```bash
 kubectl rollout status daemonset/datadog-agent -n datadog
-kubectl rollout status deployment/datadog-cluster-agent -n datadog
+kubectl rollout status deployment/datadog-agent-cluster-agent -n datadog
 ```
 
 Check Datadog UI: **Infrastructure → Kubernetes**, cluster `datadog-k8s-lab` — appears in 2–3 minutes.
@@ -315,7 +320,7 @@ Optional deep validation script (runs everything above + log checks + agent stat
   echo "===== 1. PODS (apps) =====" && kubectl get pods -n apps -o wide && \
   echo "\n===== 2. PODS (datadog) =====" && kubectl get pods -n datadog -o wide && \
   echo "\n===== 3. SERVICES (apps) =====" && kubectl get svc -n apps && \
-  echo "\n===== 4. DATADOG AGENT CR =====" && kubectl get datadogagent datadog -n datadog && \
+  echo "\n===== 4. HELM RELEASE =====" && helm list -n datadog && helm status datadog-agent -n datadog && \
   echo "\n===== 5. JAVA APP LOGS =====" && kubectl logs -l app=java-app -n apps --tail=5 && \
   echo "\n===== 6. PYTHON APP LOGS =====" && kubectl logs -l app=python-app -n apps --tail=5 && \
   echo "\n===== 7. DOTNET APP LOGS =====" && kubectl logs -l app=dotnet-app -n apps --tail=5 && \
@@ -367,3 +372,4 @@ kind delete cluster --name datadog-k8s-lab
 | python-app `dd.trace_id: "0"` in logs | `ddtrace` pre-installed; SSI aborts injection | Added `import ddtrace.bootstrap.sitecustomize` in ConfigMap |
 | ConfigMap namespace mismatch | App ConfigMaps had `namespace: default` but apps run in `apps` | Changed ConfigMaps to `namespace: apps` |
 | dotnet-app openmetrics 404 | Demo image has no `/metrics` route | Removed `openmetrics` annotation — APM via SSI |
+| Migrated from Operator to Helm | Previous labs used the Datadog Operator. This version uses the official Helm chart. | If you have an older cluster, delete the Operator first: `helm delete datadog-operator -n datadog` |
