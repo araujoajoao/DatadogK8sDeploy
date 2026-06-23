@@ -1,0 +1,115 @@
+datadog:
+  apiKeyExistingSecret: datadog-secret
+  appKeyExistingSecret: datadog-secret
+  site: datadoghq.com
+  clusterName: datadog-k8s-lab
+
+  tags:
+    - "env:k8s-lab"
+    - "k8s_cluster:datadog-k8s-lab"
+
+  kubelet:
+    tlsVerify: false
+
+  env:
+    - name: DD_HOSTNAME
+      value: "lab-k8s-lab"
+    - name: DD_CONTAINER_EXCLUDE
+      value: "name:etcd name:kube-scheduler name:kube-apiserver name:kube-controller-manager"
+    - name: DD_KUBERNETES_KUBELET_HOST
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    - name: DD_COLLECT_KUBERNETES_EVENTS
+      value: "true"
+    - name: DD_ENABLE_ORCHESTRATOR_EXPLORER
+      value: "true"
+    - name: DD_APM_ENABLED
+      value: "true"
+    - name: DD_PROCESS_AGENT_ENABLED
+      value: "true"
+    - name: DD_LOGS_ENABLED
+      value: "true"
+    - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
+      value: "true"
+    - name: DD_CONTAINER_EXCLUDE_LOGS
+      value: "kube_namespace:kube-system kube_namespace:local-path-storage name:kindnetd"
+    - name: DD_ENV
+      value: "k8s-lab"
+    - name: DD_DATABASE_MONITORING_ENABLED
+      value: "true"
+    - name: DD_IGNORE_AUTOCONF
+      value: "kube_controller_manager kube_scheduler etcd"
+    - name: DD_JMX_ENABLED
+      value: "true"
+
+  logCollection:
+    enabled: true
+    containerCollectAll: true
+
+  apm:
+    enabled: true
+    portEnabled: true
+    port: 8126
+    socketEnabled: true
+    instrumentation:
+      enabled: true
+      enabledNamespaces:
+        - apps
+      disabledNamespaces:
+        - kube-system
+        - default
+      libVersions:
+        java: "latest"
+        python: "latest"
+        dotnet: "latest"
+
+  dogstatsd:
+    port: 8125
+
+  processAgent:
+    enabled: true
+
+  orchestratorExplorer:
+    enabled: true
+
+  kubeStateMetricsCore:
+    enabled: true
+
+  clusterChecks:
+    enabled: true
+
+  remoteConfiguration:
+    enabled: true
+
+  npm:
+    enabled: true
+
+  usm:
+    enabled: true
+
+agents:
+  image:
+    tag: "7.80.0"
+  tolerations:
+    - effect: NoSchedule
+      key: node-role.kubernetes.io/control-plane
+      operator: Exists
+    - effect: NoExecute
+      key: node-role.kubernetes.io/etcd
+      operator: Exists
+  volumes:
+    - name: datadog-confd
+      configMap:
+        name: datadog-confd
+  volumeMounts:
+    - name: datadog-confd
+      mountPath: /conf.d
+
+clusterAgent:
+  replicas: 1
+  image:
+    tag: "7.80.0"
+  admissionController:
+    enabled: true
+    mutateUnlabelled: false
