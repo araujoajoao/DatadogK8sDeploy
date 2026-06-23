@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datadog-confd
+  namespace: datadog
+data:
+  java_app_logs.yaml: |
+    ad_identifiers:
+      - java-app
+    logs:
+      - source: java
+        service: java-app
+        log_processing_rules:
+          - type: exclude_at_match
+            name: exclude_non_json
+            pattern: ^\[dd\.trace|^Picked up|^OpenJDK|\(Will not log|^\s*$|^\tat |^Caused by:|^\.\.\.\s+\d+ more
+          - type: multi_line
+            name: json_multiline
+            pattern: ^\{
+  python_app_logs.yaml: |
+    ad_identifiers:
+      - python-app
+    logs:
+      - source: python
+        service: python-app
+        log_processing_rules:
+          - type: multi_line
+            name: json_multiline
+            pattern: ^\{
+  dotnet_app_logs.yaml: |
+    ad_identifiers:
+      - dotnet-app
+    logs:
+      - source: dotnet
+        service: dotnet-app
