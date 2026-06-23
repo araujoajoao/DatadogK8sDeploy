@@ -30,12 +30,6 @@ spec:
         ports:
         - containerPort: 5000
         env:
-          - name: DD_AGENT_HOST
-            value: "datadog-agent.default.svc.cluster.local"
-          - name: DD_TRACE_AGENT_PORT
-            value: "8126"
-          - name: DD_DOGSTATSD_PORT
-            value: "8125"
           - name: DD_LOGS_INJECTION
             value: "true"
           - name: DD_SERVICE
