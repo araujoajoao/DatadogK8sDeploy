@@ -20,8 +20,7 @@ spec:
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "java-app"
         tags.datadoghq.com/version: "latest"
-      annotations:
-        admission.datadoghq.com/java-lib.version: "latest"
+      annotations: {}
     spec:
       containers:
       - name: java-app
@@ -29,6 +28,14 @@ spec:
         ports:
         - containerPort: 8080
         env:
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_TRACE_AGENT_PORT
+            value: "8126"
+          - name: DD_DOGSTATSD_PORT
+            value: "8125"
           - name: DD_LOGS_INJECTION
             value: "true"
           - name: LOGGING_CONFIG
@@ -49,6 +56,10 @@ spec:
             value: "http://python-app:5000"
           - name: SPRING_MVC_ASYNC_REQUEST_TIMEOUT
             value: "15000"
+          - name: DD_PROFILING_ENABLED
+            value: "true"
+          - name: DD_EXCEPTION_REPLAY_ENABLED
+            value: "true"
         volumeMounts:
         - name: java-logging-config
           mountPath: /logging
