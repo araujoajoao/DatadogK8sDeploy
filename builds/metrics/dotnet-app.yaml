@@ -20,8 +20,7 @@ spec:
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "dotnet-app"
         tags.datadoghq.com/version: "latest"
-      annotations:
-        admission.datadoghq.com/dotnet-lib.version: "latest"
+      annotations: {}
     spec:
       containers:
       - name: dotnet-app
@@ -29,6 +28,14 @@ spec:
         ports:
         - containerPort: 80
         env:
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_TRACE_AGENT_PORT
+            value: "8126"
+          - name: DD_DOGSTATSD_PORT
+            value: "8125"
           - name: DD_LOGS_INJECTION
             value: "true"
           - name: DD_SERVICE
@@ -40,4 +47,8 @@ spec:
           - name: DD_RUNTIME_METRICS_ENABLED
             value: "true"
           - name: DD_TRACE_METRICS_ENABLED
+            value: "true"
+          - name: DD_PROFILING_ENABLED
+            value: "true"
+          - name: DD_EXCEPTION_REPLAY_ENABLED
             value: "true"
