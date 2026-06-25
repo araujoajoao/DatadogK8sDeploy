@@ -6,6 +6,7 @@ metadata:
     app: apache
     tags.datadoghq.com/env: "k8s-lab"
     tags.datadoghq.com/service: "apache"
+    tags.datadoghq.com/version: "latest"
 spec:
   replicas: 1
   selector:
@@ -17,6 +18,7 @@ spec:
         app: apache
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "apache"
+        tags.datadoghq.com/version: "latest"
       annotations:
         ad.datadoghq.com/httpd-setup.exclude: "true"
         ad.datadoghq.com/apache.logs: '[{"source": "apache", "service": "apache"}]'
@@ -52,6 +54,27 @@ spec:
         image: httpd:latest
         ports:
         - containerPort: 80
+        env:
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_DOGSTATSD_PORT
+            value: "8125"
+          - name: DD_LOGS_INJECTION
+            value: "true"
+          - name: DD_SERVICE
+            value: "apache"
+          - name: DD_ENV
+            value: "k8s-lab"
+          - name: DD_VERSION
+            value: "latest"
+          - name: DD_RUNTIME_METRICS_ENABLED
+            value: "true"
+          - name: DD_PROFILING_ENABLED
+            value: "true"
+          - name: DD_EXCEPTION_REPLAY_ENABLED
+            value: "true"
         volumeMounts:
         - name: httpd-conf
           mountPath: /usr/local/apache2/conf
