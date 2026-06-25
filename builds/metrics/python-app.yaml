@@ -20,8 +20,7 @@ spec:
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "python-app"
         tags.datadoghq.com/version: "latest"
-      annotations:
-        admission.datadoghq.com/python-lib.version: "latest"
+      annotations: {}
     spec:
       containers:
       - name: python-app
@@ -30,6 +29,14 @@ spec:
         ports:
         - containerPort: 5000
         env:
+          - name: DD_AGENT_HOST
+            valueFrom:
+              fieldRef:
+                fieldPath: status.hostIP
+          - name: DD_TRACE_AGENT_PORT
+            value: "8126"
+          - name: DD_DOGSTATSD_PORT
+            value: "8125"
           - name: DD_LOGS_INJECTION
             value: "true"
           - name: DD_SERVICE
@@ -39,6 +46,10 @@ spec:
           - name: DD_VERSION
             value: "latest"
           - name: DD_RUNTIME_METRICS_ENABLED
+            value: "true"
+          - name: DD_PROFILING_ENABLED
+            value: "true"
+          - name: DD_EXCEPTION_REPLAY_ENABLED
             value: "true"
         volumeMounts:
         - name: python-logging-patch
