@@ -1,13 +1,12 @@
 # Laboratório de Observabilidade com Datadog e Kubernetes
 
+[![English](https://img.shields.io/badge/📖_Language-🇺🇸_English-lightgrey?style=for-the-badge)](./README.md) [![Português](https://img.shields.io/badge/🇧🇷_Idioma-Português_(PT--BR)_(Ativo)-2ea44f?style=for-the-badge)](#)
+
 [![Validate](https://github.com/araujoajoao/DatadogK8sDeploy/actions/workflows/validate.yml/badge.svg)](https://github.com/araujoajoao/DatadogK8sDeploy/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=flat&logo=terraform&logoColor=white)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
-[![Language: EN](https://img.shields.io/badge/Language-English-blue.svg)](./README.md)
 
-> 🌐 **Idioma / Language:** [🇺🇸 English Version](./README.md) | Português (PT-BR)
->
 > 👶 **Feito para Iniciantes do Absoluto Zero (Sem experiência prévia com Kubernetes ou Datadog):**
 > Aprenda **observabilidade na prática** — como monitorar, rastrear e diagnosticar microsserviços modernos — utilizando o **Datadog** em um **cluster local Kubernetes 100% gratuito** no seu próprio computador. Sem surpresas na fatura da nuvem (custo $0), sem comandos complicados e sem precisar escrever uma única linha de código de instrumentação!
 
