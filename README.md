@@ -4,8 +4,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=flat&logo=terraform&logoColor=white)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![Language: PT-BR](https://img.shields.io/badge/Idioma-Portugu%C3%AAs%20(PT--BR)-green.svg)](./README.pt-br.md)
 
-> A hands-on lab for **complete beginners** to learn **observability** — how to watch, trace, and debug distributed systems — using **Datadog** on a **free local Kubernetes cluster**.
+> 🌐 **Language / Idioma:** English | [🇧🇷 Versão em Português (PT-BR)](./README.pt-br.md)
+>
+> 👶 **Designed for Complete Beginners (Zero Kubernetes & Datadog Experience Required):**
+> Learn **observability** — how to inspect, trace, and debug modern distributed microservices — using **Datadog** on a **100% free local Kubernetes cluster** on your laptop. No cloud bills ($0 cost), no complex setup, and zero tracing code to write!
 
 ---
 
