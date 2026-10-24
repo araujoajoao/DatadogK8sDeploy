@@ -17,17 +17,21 @@ spec:
     metadata:
       labels:
         app: dotnet-app
+        admission.datadoghq.com/enabled: "true"
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "dotnet-app"
         tags.datadoghq.com/version: "latest"
-      annotations: {}
+      annotations:
+        admission.datadoghq.com/dotnet-lib.version: "latest"
     spec:
       containers:
       - name: dotnet-app
-        image: YOUR_DOCKERHUB_USERNAME/dotnet-app:latest
+        image: mcr.microsoft.com/dotnet/samples:aspnetapp
         ports:
         - containerPort: 80
         env:
+          - name: ASPNETCORE_URLS
+            value: "http://+:80"
           - name: DD_AGENT_HOST
             valueFrom:
               fieldRef:

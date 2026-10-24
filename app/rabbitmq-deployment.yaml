@@ -6,6 +6,7 @@ metadata:
     app: rabbitmq
     tags.datadoghq.com/env: "k8s-lab"
     tags.datadoghq.com/service: "rabbitmq"
+    tags.datadoghq.com/version: "latest"
 spec:
   replicas: 1
   selector:
@@ -17,6 +18,7 @@ spec:
         app: rabbitmq
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "rabbitmq"
+        tags.datadoghq.com/version: "latest"
       annotations:
         ad.datadoghq.com/rabbitmq.logs: '[{"source": "rabbitmq", "service": "rabbitmq"}]'
         ad.datadoghq.com/rabbitmq.checks: |

@@ -108,10 +108,12 @@ cp .env.example .env
 source .env
 
 # Step 4: Start the local Kubernetes cluster
-sudo cloud-provider-kind &        # keep this running in a terminal
 kind create cluster --config kubernetes/kind-config.yaml --name datadog-k8s-lab
+# Optional: sudo cloud-provider-kind & in another terminal for LoadBalancer IPs (populate.sh automatically uses port-forwarding if omitted)
 
 # Step 5: Deploy everything (the full guide explains each part)
+kubectl create namespace datadog
+kubectl create namespace apps
 kubectl create secret generic datadog-secret \
   --from-literal=api-key="$DATADOG_API_KEY" \
   --from-literal=app-key="$DATADOG_APP_KEY" \
@@ -119,9 +121,11 @@ kubectl create secret generic datadog-secret \
 kubectl apply -f kubernetes/datadog-confd-configmap.yaml
 helm install datadog-agent datadog/datadog \
   -f kubernetes/datadog-values.yaml \
-  -n datadog --create-namespace
+  -n datadog
 kubectl apply -f configmap/ -f app/ -f builds/metrics/
-cd terraform && terraform init && terraform apply
+export TF_VAR_datadog_api_key="$DATADOG_API_KEY"
+export TF_VAR_datadog_app_key="$DATADOG_APP_KEY"
+cd terraform && terraform init && terraform apply -auto-approve
 cd .. && ./populate.sh
 ```
 
@@ -156,6 +160,8 @@ Also:
 | `builds/metrics/` | Java, Python, .NET apps + Services | The actual applications you'll trace and monitor |
 | `configmap/` | Logging patches and config | Tweaks to make logs and traces work together |
 | `terraform/` | Monitors + Dashboard as code | Code that creates alerts in Datadog — instead of clicking in the UI |
+| `src/` | Source code & official Dockerfiles (Java, Python, .NET) | Explore the code and build your own container images |
+| `scripts/` | Helper scripts (e.g. `build-images.sh`) | Build and load images into Kind locally |
 | `deprecated/shell-scripts/` | Old scripts (ignore these) | We use Terraform now — it's cleaner |
 
 ---

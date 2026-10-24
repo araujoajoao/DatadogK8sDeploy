@@ -1,10 +1,10 @@
 # Datadog API Key (required)
-api_key = "YOUR-API-KEY"
+datadog_api_key = "YOUR-API-KEY"
 
 # Datadog Application Key (required)
-app_key = "YOUR-APP-KEY"
+datadog_app_key = "YOUR-APP-KEY"
 
-# Datagod Site
+# Datadog Site
 api_url = "https://api.datadoghq.com/"
 
 # Notification email for alerts (optional - defaults to notify@example.com)

@@ -1,0 +1,19 @@
+{
+  "name": "nodejsapp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "ioredis": "^5.4.1",
+    "winston": "^3.19.0"
+  }
+}
+

@@ -17,15 +17,17 @@ spec:
     metadata:
       labels:
         app: python-app
+        admission.datadoghq.com/enabled: "true"
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "python-app"
         tags.datadoghq.com/version: "latest"
-      annotations: {}
+      annotations:
+        admission.datadoghq.com/python-lib.version: "latest"
     spec:
       containers:
       - name: python-app
-        image: YOUR_DOCKERHUB_USERNAME/python-app:py311
-        command: ["python", "/startup/entrypoint.py"]
+        image: python:3.11-slim
+        command: ["sh", "-c", "pip install --no-cache-dir flask && python /startup/entrypoint.py"]
         ports:
         - containerPort: 5000
         env:

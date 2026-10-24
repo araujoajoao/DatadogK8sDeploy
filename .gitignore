@@ -6,5 +6,8 @@ scripts/.datadog-resource-ids.json
 .kimchi/
 *.deprecated
 
-# Terraform provider cache
+# Terraform provider cache & state
 .terraform/
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
