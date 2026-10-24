@@ -94,6 +94,55 @@ Every request to `java-app /greeting` calls `python-app` which calls `dotnet-app
 
 ---
 
+## ⚙️ Post-Clone Setup: What You Need to Change
+
+> [!IMPORTANT]
+> **Summary: You only need to edit ONE file: [`.env`](.env).**
+> You do **not** need a personal Docker Hub account, you do **not** need to build or compile container images, and you do **not** need to edit any Kubernetes YAML manifests. Everything is pre-configured with official vendor images to run out-of-the-box.
+
+### 📋 Configuration Matrix
+
+| File / Component | Setting / Variable | Type | Action Required |
+|---|---|---|---|
+| **[`.env`](.env)** | `DATADOG_API_KEY` | 🔴 **Mandatory** | Paste your Datadog API Key |
+| **[`.env`](.env)** | `DATADOG_APP_KEY` | 🔴 **Mandatory** | Paste your Datadog Application Key (used by Terraform) |
+| **[`.env`](.env)** | `DATADOG_SITE` | 🟡 **Regional** | Change only if your account is outside US1 (e.g., `datadoghq.eu`, `us3.datadoghq.com`, `us5.datadoghq.com`, `ap1.datadoghq.com`). Defaults to `datadoghq.com` |
+| **[`.env`](.env)** | `NOTIFICATION_EMAIL` | ⚪ **Optional** | Email to receive monitor alert notifications (defaults to `notify@example.com`) |
+| **[`.env`](.env)** | `ENV` | ⚪ **Optional** | Target environment tag (defaults to `k8s-lab`) |
+| `builds/metrics/*.yaml` | Applications | 🟢 **Do Not Edit** | Uses official vendor images (`springio`, `python:3.11-slim`, `mcr.microsoft.com/dotnet`). |
+| `app/*.yaml` | Infrastructure | 🟢 **Do Not Edit** | Uses official images (`httpd:2.4`, `rabbitmq:3-management`). |
+| `kubernetes/*.yaml` | Agent & SSI Config | 🟢 **Do Not Edit** | Pre-configured with Single Step Instrumentation (SSI) admission controller. |
+| `terraform/*.tf` | Alerts as Code | 🟢 **Do Not Edit** | Reads your credentials automatically from `TF_VAR_*` environment variables. |
+| `src/` | Polyglot Source Code | 🟢 **Do Not Edit** | Reference source code only. No compiling or image building required! |
+
+---
+
+### 🔑 Step-by-Step Setup
+
+```bash
+# 1. Copy the example environment file
+cp .env.example .env
+
+# 2. Open .env in your editor
+nano .env   # or: code .env, vim .env
+```
+
+Fill in your real values:
+```bash
+# 🔴 REQUIRED: From Datadog -> Organization Settings -> API Keys / Application Keys
+DATADOG_API_KEY="your_real_api_key_here"
+DATADOG_APP_KEY="your_real_app_key_here"
+
+# 🟡 REGIONAL: Match your Datadog login domain (defaults to datadoghq.com)
+# Examples: datadoghq.com (US1), datadoghq.eu (EU), us3.datadoghq.com (US3), us5.datadoghq.com (US5)
+DATADOG_SITE="datadoghq.com"
+
+# ⚪ OPTIONAL: Email for monitor alerts (defaults to notify@example.com)
+NOTIFICATION_EMAIL="your-email@example.com"
+```
+
+---
+
 ## 🚀 Quick Start (5 Steps)
 
 ```bash
@@ -102,16 +151,16 @@ Every request to `java-app /greeting` calls `python-app` which calls `dotnet-app
 git clone https://github.com/araujoajoao/DatadogK8sDeploy.git
 cd DatadogK8sDeploy
 
-# Step 3: Set up your Datadog credentials
+# Step 3: Configure credentials (only .env needs editing!)
 cp .env.example .env
-# Edit .env and replace YOUR_API_KEY + YOUR_APP_KEY with real values from Datadog
+# Open .env, fill in DATADOG_API_KEY and DATADOG_APP_KEY, then export:
 source .env
 
 # Step 4: Start the local Kubernetes cluster
 kind create cluster --config kubernetes/kind-config.yaml --name datadog-k8s-lab
-# Optional: sudo cloud-provider-kind & in another terminal for LoadBalancer IPs (populate.sh automatically uses port-forwarding if omitted)
+# Tip: cloud-provider-kind is optional; populate.sh automatically uses port-forwarding if omitted!
 
-# Step 5: Deploy everything (the full guide explains each part)
+# Step 5: Deploy everything
 kubectl create namespace datadog
 kubectl create namespace apps
 kubectl create secret generic datadog-secret \
@@ -121,12 +170,15 @@ kubectl create secret generic datadog-secret \
 kubectl apply -f kubernetes/datadog-confd-configmap.yaml
 helm install datadog-agent datadog/datadog \
   -f kubernetes/datadog-values.yaml \
+  --set datadog.site="${DATADOG_SITE:-datadoghq.com}" \
   -n datadog
 kubectl apply -f configmap/ -f app/ -f builds/metrics/
 export TF_VAR_datadog_api_key="$DATADOG_API_KEY"
 export TF_VAR_datadog_app_key="$DATADOG_APP_KEY"
-cd terraform && terraform init && terraform apply -auto-approve
-cd .. && ./populate.sh
+export TF_VAR_api_url="https://api.${DATADOG_SITE:-datadoghq.com}/"
+export TF_VAR_notification_email="${NOTIFICATION_EMAIL:-notify@example.com}"
+cd terraform && terraform init && terraform apply -auto-approve && cd ..
+./populate.sh
 ```
 
 🎯 **That was the 30-second version. For the step-by-step guide with explanations, see [deploy-guide.md](./deploy-guide.md).**
@@ -182,6 +234,15 @@ Open [app.datadoghq.com](https://app.datadoghq.com) and look for:
 ---
 
 ## 🛠️ Troubleshooting & FAQ
+
+**Q: Which files do I need to edit after cloning?**
+> **Only `.env`!** Copy `.env.example` to `.env` and fill in your `DATADOG_API_KEY` and `DATADOG_APP_KEY`. No Kubernetes YAMLs, Dockerfiles, or Terraform files need to be edited.
+
+**Q: Do I need a personal Docker Hub account or do I need to build images?**
+> **No.** All application and infrastructure manifests pull public official vendor images (`springio`, `python`, `mcr.microsoft.com`, `httpd`, `rabbitmq`). The code in `src/` and script `scripts/build-images.sh` are strictly optional for advanced learning.
+
+**Q: What if my Datadog account is on the EU region (`datadoghq.eu`) or US3/US5?**
+> Just set `DATADOG_SITE=datadoghq.eu` in your `.env`. The Helm deployment and Terraform provider automatically respect your `DATADOG_SITE` setting.
 
 **Q: I'm new to Kubernetes — is this too advanced?**
 > Not at all. Every command is explained in the [deploy guide](./deploy-guide.md). You only need to copy-paste and run.

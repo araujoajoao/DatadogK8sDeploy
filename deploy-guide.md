@@ -116,6 +116,7 @@ Then install the Agent using Helm:
 ```bash
 helm install datadog-agent datadog/datadog \
   -f kubernetes/datadog-values.yaml \
+  --set datadog.site="${DATADOG_SITE:-datadoghq.com}" \
   -n datadog
 ```
 
@@ -273,6 +274,8 @@ First, pass your Datadog credentials to Terraform via environment variables:
 source .env
 export TF_VAR_datadog_api_key="$DATADOG_API_KEY"
 export TF_VAR_datadog_app_key="$DATADOG_APP_KEY"
+export TF_VAR_api_url="https://api.${DATADOG_SITE:-datadoghq.com}/"
+export TF_VAR_notification_email="${NOTIFICATION_EMAIL:-notify@example.com}"
 ```
 
 Then initialize and apply the Terraform configuration:
