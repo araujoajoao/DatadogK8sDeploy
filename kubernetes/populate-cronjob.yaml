@@ -47,7 +47,7 @@ spec:
                 hit "java   /greeting      (full chain)" "${JAVA}/greeting"
                 hit "python /              " "${PY}/"
                 hit "python /api/dotnet    (py→dotnet)" "${PY}/api/dotnet"
-                hit "dotnet /weatherforecast" "${DN}/weatherforecast"
+                hit "dotnet /              " "${DN}/"
                 i=$((i + 1))
               done
 

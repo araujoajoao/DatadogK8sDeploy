@@ -17,14 +17,16 @@ spec:
     metadata:
       labels:
         app: java-app
+        admission.datadoghq.com/enabled: "true"
         tags.datadoghq.com/env: "k8s-lab"
         tags.datadoghq.com/service: "java-app"
         tags.datadoghq.com/version: "latest"
-      annotations: {}
+      annotations:
+        admission.datadoghq.com/java-lib.version: "latest"
     spec:
       containers:
       - name: java-app
-        image: YOUR_DOCKERHUB_USERNAME/java-app:latest
+        image: springio/gs-spring-boot-docker:latest
         ports:
         - containerPort: 8080
         env:

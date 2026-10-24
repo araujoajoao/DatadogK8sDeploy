@@ -56,4 +56,4 @@ jobs:
       - name: Run ShellCheck
         run: |
           sudo apt-get install -y shellcheck
-          shellcheck deprecated/shell-scripts/*.sh
+          shellcheck populate.sh scripts/*.sh deprecated/shell-scripts/*.sh

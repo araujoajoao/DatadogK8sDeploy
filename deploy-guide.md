@@ -31,13 +31,13 @@ source .env
 
 ---
 
-## Step 0 — Start the LoadBalancer Controller
+## Step 0 — (Optional) Start the LoadBalancer Controller
 
-> **What this does:** `kind` clusters can't expose services to the outside world by default. This helper creates fake LoadBalancer IPs so you can access your apps from your browser/curl.
+> **What this does:** `kind` clusters can't expose services via LoadBalancer IPs to the host machine by default. This helper assigns real local IPs so you can access your apps directly via curl or browser.
 >
-> 💡 **Beginner tip:** This must run in its own terminal window and stay open while the cluster is running.
+> 💡 **Beginner tip:** If you prefer not to run `cloud-provider-kind`, you can skip this step! The `./populate.sh` script automatically falls back to `kubectl port-forward` when LoadBalancer IPs are pending.
 
-Keep running in a dedicated terminal:
+If using `cloud-provider-kind`, keep running in a dedicated terminal:
 
 ```bash
 sudo cloud-provider-kind
@@ -75,7 +75,7 @@ Add the Datadog Helm repository and update it:
 
 ```bash
 helm repo add datadog https://helm.datadoghq.com
-helm repo update
+helm repo update datadog
 ```
 
 ---
@@ -88,6 +88,7 @@ helm repo update
 
 ```bash
 source .env
+kubectl create namespace datadog
 kubectl create secret generic datadog-secret \
   --from-literal=api-key="$DATADOG_API_KEY" \
   --from-literal=app-key="$DATADOG_APP_KEY" \
@@ -102,7 +103,7 @@ kubectl create secret generic datadog-secret \
 
 > **What this does:** The Datadog Agent is the "watchman" that runs on every machine in your cluster. It collects **metrics**, **logs**, and **traces** from everything running nearby and sends them to Datadog.
 >
-> 💡 **Beginner tip:** The Agent has two parts: (1) a **DaemonSet** that runs on every node, and (2) a **Cluster Agent** that watches the whole cluster.
+> 💡 **Beginner tip:** The Agent has two parts: (1) a **DaemonSet** that runs on every node, and (2) a **Cluster Agent** that watches the whole cluster and runs the admission controller for SSI.
 
 First, apply the ConfigMap that holds custom log processing rules:
 
@@ -115,7 +116,7 @@ Then install the Agent using Helm:
 ```bash
 helm install datadog-agent datadog/datadog \
   -f kubernetes/datadog-values.yaml \
-  -n datadog --create-namespace
+  -n datadog
 ```
 
 Wait for rollouts (this means "wait until the pods are ready"):
@@ -247,15 +248,16 @@ Generate traffic (each curl sends a request through the app chain):
 curl http://$(kubectl get svc java-app -n apps -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):8080/greeting
 curl http://$(kubectl get svc python-app -n apps -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):5000/
 curl http://$(kubectl get svc python-app -n apps -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):5000/api/dotnet
-curl http://$(kubectl get svc dotnet-app -n apps -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):80/weatherforecast
+curl http://$(kubectl get svc dotnet-app -n apps -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):80/
 ```
 
 > 💡 **Beginner tip:**
-> - `/greeting` calls Java → Python → .NET (full trace chain)
-> - `/weatherforecast` calls .NET directly
-> - The first curl creates a **distributed trace** — Datadog follows the request across all 3 languages
+> - `/greeting` calls Java
+> - `/api/dotnet` calls Python → .NET (distributed trace chain)
+> - All apps use **official vendor images** (`python:3.11-slim`, `springio/gs-spring-boot-docker`, `mcr.microsoft.com/dotnet/samples:aspnetapp`) by default.
+> - To build from source locally using official Dockerfiles (`src/`), run `./scripts/build-images.sh`.
 >
-> For automatic traffic, run `./populate.sh` to hit all endpoints continuously.
+> For automatic traffic generation, run `./populate.sh`.
 
 ---
 
@@ -373,3 +375,7 @@ kind delete cluster --name datadog-k8s-lab
 | ConfigMap namespace mismatch | App ConfigMaps had `namespace: default` but apps run in `apps` | Changed ConfigMaps to `namespace: apps` |
 | dotnet-app openmetrics 404 | Demo image has no `/metrics` route | Removed `openmetrics` annotation — APM via SSI |
 | Migrated from Operator to Helm | Previous labs used the Datadog Operator. This version uses the official Helm chart. | If you have an older cluster, delete the Operator first: `helm delete datadog-operator -n datadog` |
+| Helm schema error on `disabledNamespaces` | `enabledNamespaces` and `disabledNamespaces` are mutually exclusive in the Helm chart | Kept `enabledNamespaces: [apps]` and removed `disabledNamespaces` |
+| SSI unlabelled pods not injected | Datadog admission controller defaults to `mutateUnlabelled: false` | Set `mutateUnlabelled: true` and added explicit `admission.datadoghq.com` labels/annotations |
+| Terraform prompt for `api_key` | Redundant duplicate variables declared in `variables.tf` | Consolidated to `datadog_api_key` / `datadog_app_key` matching `TF_VAR_*` |
+| Personal Docker Hub images replaced | Reliance on personal accounts (`araujoajoao/*`) | Replaced with official vendor images (`python:3.11-slim`, `springio/gs-spring-boot-docker`, `mcr.microsoft.com/dotnet/samples:aspnetapp`) + local multi-stage `src/` builds |

@@ -56,9 +56,6 @@ datadog:
       enabled: true
       enabledNamespaces:
         - apps
-      disabledNamespaces:
-        - kube-system
-        - default
       libVersions:
         java: "latest"
         python: "latest"
@@ -112,4 +109,4 @@ clusterAgent:
     tag: "7.80.0"
   admissionController:
     enabled: true
-    mutateUnlabelled: false
+    mutateUnlabelled: true

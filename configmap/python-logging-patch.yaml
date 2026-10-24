@@ -5,6 +5,11 @@ metadata:
   namespace: apps
 data:
   entrypoint.py: |
+    try:
+        import ddtrace.bootstrap.sitecustomize  # noqa: F401
+    except ImportError:
+        pass
+
     import json
     import logging
     import sys
@@ -48,11 +53,12 @@ data:
     @app.route('/api/dotnet')
     def api_dotnet():
         try:
-            req = urllib.request.urlopen(
-                'http://dotnet-app/weatherforecast', timeout=5
-            )
+            try:
+                req = urllib.request.urlopen('http://dotnet-app/weatherforecast', timeout=3)
+            except Exception:
+                req = urllib.request.urlopen('http://dotnet-app/', timeout=3)
             data = req.read().decode()
-            return Response(data, content_type='application/json')
+            return Response(data, content_type='text/plain')
         except Exception as e:
             return Response(json.dumps({"error": str(e)}), status=502,
                             content_type='application/json')

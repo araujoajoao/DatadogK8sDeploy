@@ -34,7 +34,7 @@ Following a single user request as it travels through multiple services. Each "h
 ## H
 
 ### Helm
-A package manager for Kubernetes. Instead of writing hundreds of lines of YAML by hand, you install pre-packaged "charts" (like `datadog-operator`) with one command.
+A package manager for Kubernetes. Instead of writing hundreds of lines of YAML by hand, you install pre-packaged "charts" (like `datadog/datadog`) with one command.
 
 ---
 
@@ -91,7 +91,7 @@ A virtual partition inside a Kubernetes cluster. Resources in one namespace are 
 The ability to understand what a system is doing by examining its outputs — **metrics**, **logs**, and **traces**. The word comes from "observe": you observe the system from the outside to understand its internal state.
 
 ### Operator (Kubernetes)
-A custom controller that automates the lifecycle of complex applications. In this lab, the **Datadog Operator** automatically deploys and manages the Datadog Agent and Cluster Agent.
+A custom controller pattern that automates the lifecycle of complex applications. While Datadog offers a Datadog Operator, this lab uses the official Datadog Helm chart (`datadog/datadog`), which provides a centralized, streamlined configuration for local clusters and SSI.
 
 ---
 
